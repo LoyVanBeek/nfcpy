@@ -27,7 +27,8 @@ log = logging.getLogger(__name__)
 
 import io
 import copy
-import nfc.ndef
+# import nfc.ndef
+from record import Record
 
 class Message(object):
     """Wraps a sequence of NDEF records and provides methods for
@@ -35,8 +36,8 @@ class Message(object):
     variable number of positional arguments. A call without argument
     produces a Message object with no records. A single str or
     bytearray argument is parsed as NDEF message bytes. A single list
-    or tuple of :class:`nfc.ndef.Record` objects produces a Message
-    with those records in order. One or more :class:`nfc.ndef.Record`
+    or tuple of :class:`Record` objects produces a Message
+    with those records in order. One or more :class:`Record`
     arguments produce a Message with those records in order.
 
     >>> nfc.ndef.Message(b'\\x10\\x00\\x00')     # NDEF data bytes
@@ -52,7 +53,7 @@ class Message(object):
                 self._read(args[0])
             elif isinstance(args[0], (str, bytearray)):
                 self._read(io.BytesIO(args[0]))
-            elif isinstance(args[0], nfc.ndef.Record):
+            elif isinstance(args[0], Record):
                 self.append(args[0])
             elif isinstance(args[0], (list, tuple)):
                 self.extend(args[0])
@@ -62,13 +63,13 @@ class Message(object):
         
     def _read(self, f):
         log.debug("parse ndef message at offset {0}".format(f.tell()))
-        record = nfc.ndef.Record(data=f)
+        record = Record(data=f)
         if record._message_begin == False:
             log.error("message begin flag not set at begin of ndef")
             raise nfc.ndef.FormatError("message begin flag not set")
         self._records.append(record)
         while self._records[-1]._message_end == False:
-            self._records.append(nfc.ndef.Record(data=f))
+            self._records.append(Record(data=f))
         log.debug("ndef message complete at offset {0}".format(f.tell()))
 
     def _write(self, f):
@@ -99,9 +100,9 @@ class Message(object):
         return self._records[key]
 
     def __setitem__(self, key, value):
-        if not (isinstance(value, nfc.ndef.Record) or
-                all([isinstance(elem, nfc.ndef.Record) for elem in value])):
-            raise TypeError("only nfc.ndef.Record objects are accepted")
+        if not (isinstance(value, Record) or
+                all([isinstance(elem, Record) for elem in value])):
+            raise TypeError("only Record objects are accepted")
         self._records[key] = value
 
     def __delitem__(self, key):
@@ -109,20 +110,20 @@ class Message(object):
 
     def append(self, record):
         """Add a record to the end of the message. The *record*
-        argument must be an instance of :class:`nfc.ndef.Record`."""
+        argument must be an instance of :class:`Record`."""
         
-        if not isinstance(record, nfc.ndef.Record):
-            raise TypeError("an nfc.ndef.Record object is required")
+        if not isinstance(record, Record):
+            raise TypeError("an Record object is required")
         self._records.append(copy.copy(record))
 
     def extend(self, records):
         """Extend the message by appending all the records in the
         given list. The *records* argument must be a sequence of
-        :class:`nfc.ndef.Record` elements."""
+        :class:`Record` elements."""
 
         for record in records:
-            if not isinstance(record, nfc.ndef.Record):
-                raise TypeError("only nfc.ndef.Record objects are accepted")
+            if not isinstance(record, Record):
+                raise TypeError("only Record objects are accepted")
             self._records.append(copy.copy(record))
         
     def insert(self, i, record):
@@ -131,10 +132,10 @@ class Message(object):
         message.insert(0, record) inserts at the front of the message,
         and message.insert(len(message), record) is equivalent to
         message.append(record). The second argument *record* must be
-        an instance of :class:`nfc.ndef.Record`."""
+        an instance of :class:`Record`."""
         
-        if not isinstance(record, nfc.ndef.Record):
-            raise TypeError("an nfc.ndef.Record object is required")
+        if not isinstance(record, Record):
+            raise TypeError("an Record object is required")
         self._records.append(copy.copy(record))
 
     def pop(self, i=-1):

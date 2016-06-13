@@ -32,8 +32,8 @@ import struct
 import io
 import re
 
-import nfc.ndef
-from .error import LengthError, FormatError
+#import nfc.ndef
+from error import LengthError, FormatError
 
 type_name_prefix = (
     '', 'urn:nfc:wkt:', '', '', 'urn:nfc:ext:', 'unknown', 'unchanged')
