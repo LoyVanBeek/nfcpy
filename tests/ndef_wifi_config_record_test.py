@@ -75,7 +75,7 @@ wifi_config_record_encode_empty_result = ''.join([
 def test_wifi_config_record_encode_empty():
     result = str(bytearray.fromhex(wifi_config_record_encode_empty_result))
     record = nfc.ndef.WifiConfigRecord()
-    print repr(str(record))
+    print(repr(str(record)))
     assert str(record) == result
 
 wifi_config_record_encode_all_result = ''.join([
@@ -96,7 +96,7 @@ def test_wifi_config_record_encode_full():
     record.credential['encryption'] = 'AES'
     record.credential['mac-address'] = 'ff:ff:ff:ff:ff:ff'
     record.credential['shareable'] = True
-    print repr(str(record))
+    print(repr(str(record)))
     assert str(record) == result
 
 def test_wifi_config_record_auth_types():
@@ -116,7 +116,7 @@ def test_wifi_config_record_auth_types():
         '\x00\x22': 'WPA/WPA2-Personal',
         '\xaa\xbb': 'aabb',
         }
-    for value, name in auth_type_names.iteritems():
+    for value, name in auth_type_names.items():
         yield check, value, name
 
 def test_wifi_config_record_crypt_types():
@@ -134,6 +134,6 @@ def test_wifi_config_record_crypt_types():
         '\x00\x0C': 'AES/TKIP',
         '\xaa\xbb': 'aabb',
         }
-    for value, name in crypt_type_names.iteritems():
+    for value, name in crypt_type_names.items():
         yield check, value, name
 

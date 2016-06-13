@@ -45,7 +45,7 @@ class DataExchangeProtocol(object):
         
         def __str__(self):
             s = "sent/rcvd {0}/{1}".format(self.sent_count, self.rcvd_count)
-            for name in sorted(set(self.sent.keys() + self.rcvd.keys())):
+            for name in sorted(set(list(self.sent.keys()) + list(self.rcvd.keys()))):
                 s += " {name} {sent}/{rcvd}".format(
                     name=name, sent=self.sent[name], rcvd=self.rcvd[name])
             return s

@@ -32,7 +32,7 @@ from operator import lt, le, eq, ne, ge, gt, itemgetter
 
 def sequence(template):
     a, b, c = [int(s, 16) for s in itemgetter(0, 1, 3)(template.split())]
-    return str(bytearray(range(a, c+1, b-a))).encode("hex")
+    return str(bytearray(list(range(a, c+1, b-a)))).encode("hex")
 
 def packet_generator(packets):
     for packet in packets:
@@ -50,11 +50,11 @@ class ContactlessFrontend(nfc.clf.ContactlessFrontend):
         return {}
     
     def listen(self, target, timeout):
-        print target
+        print(target)
         if type(target) is nfc.clf.DEP:
             if target.br is None:
                 target.br = 106
-            return target, bytearray.fromhex(self.packets.next())
+            return target, bytearray.fromhex(next(self.packets))
         
     def sense(self, targets):
         for target in targets:
@@ -69,11 +69,11 @@ class ContactlessFrontend(nfc.clf.ContactlessFrontend):
                 return nfc.clf.TTF(212, idm, pmm, sys)
 
     def exchange(self, data, timeout):
-        send, wait, recv = self.packets.next()
+        send, wait, recv = next(self.packets)
         if send is not None:
-            print ">> " + str(data).encode("hex")
+            print(">> " + str(data).encode("hex"))
             mask = bytearray.fromhex(makemask(send))
-            data = bytearray(map(lambda x: x[0] & x[1], zip(data, mask)))
+            data = bytearray([x[0] & x[1] for x in zip(data, mask)])
             assert data == bytearray.fromhex(send.replace('X', '0')), \
                 "send data does not match"
         if wait is not None:
@@ -88,7 +88,7 @@ class ContactlessFrontend(nfc.clf.ContactlessFrontend):
             if recv == "TimeoutError":
                 raise nfc.clf.TimeoutError("simulated")
             recv = bytearray.fromhex(recv)
-            print "<< " + str(recv).encode("hex")
+            print("<< " + str(recv).encode("hex"))
             return recv
 
     def set_communication_mode(self, brm, **kwargs):
@@ -306,16 +306,16 @@ def test_bv_p2p_in_nfcf_recv_chaining_lr_0():
     seq = [("11D40001FE000102030405XXXX000X0X00", None,
             "12D50101FE00010203040500000000000E00"),
            ("0CD40600 004000011002010E", None,
-            "06D50710" + str(bytearray(range(0x01, 0x03))).encode("hex")),
+            "06D50710" + str(bytearray(list(range(0x01, 0x03)))).encode("hex")),
            ("04D40641", None,
-            "0AD50711" + str(bytearray(range(0x03, 0x09))).encode("hex")),
+            "0AD50711" + str(bytearray(list(range(0x03, 0x09)))).encode("hex")),
            ("04D40642", None,
-            "0CD50712" + str(bytearray(range(0x09, 0x11))).encode("hex")),
+            "0CD50712" + str(bytearray(list(range(0x09, 0x11)))).encode("hex")),
            ("04D40643", None,
-            "13D50713" + str(bytearray(range(0x11, 0x20))).encode("hex")),
+            "13D50713" + str(bytearray(list(range(0x11, 0x20)))).encode("hex")),
            ("04D40640", None,
-            "22D50700" + str(bytearray(range(0x20, 0x3E))).encode("hex")),
-           ("41D40601" + str(bytearray(range(0x01, 0x3E))).encode("hex"), None,
+            "22D50700" + str(bytearray(list(range(0x20, 0x3E)))).encode("hex")),
+           ("41D40601" + str(bytearray(list(range(0x01, 0x3E)))).encode("hex"), None,
             "08D50701 FFFF0101"),
            ("03D40A", None, "03D50B")]
     dep = nfc.dep.Initiator(ContactlessFrontend(seq))
@@ -329,16 +329,16 @@ def test_bv_p2p_in_nfcf_recv_chaining_lr_1():
     seq = [("11D40001FE000102030405XXXX000X0X10", None,
             "12D50101FE00010203040500000000000E10"),
            ("0CD40600 004000011002010E", None,
-            "08D50710" + str(bytearray(range(0x01, 0x05))).encode("hex")),
+            "08D50710" + str(bytearray(list(range(0x01, 0x05)))).encode("hex")),
            ("04D40641", None,
-            "0CD50711" + str(bytearray(range(0x05, 0x0D))).encode("hex")),
+            "0CD50711" + str(bytearray(list(range(0x05, 0x0D)))).encode("hex")),
            ("04D40642", None,
-            "14D50712" + str(bytearray(range(0x0D, 0x1D))).encode("hex")),
+            "14D50712" + str(bytearray(list(range(0x0D, 0x1D)))).encode("hex")),
            ("04D40643", None,
-            "24D50713" + str(bytearray(range(0x1D, 0x3D))).encode("hex")),
+            "24D50713" + str(bytearray(list(range(0x1D, 0x3D)))).encode("hex")),
            ("04D40640", None,
-            "45D50700" + str(bytearray(range(0x3D, 0x7E))).encode("hex")),
-           ("81D40601" + str(bytearray(range(0x01, 0x7E))).encode("hex"), None,
+            "45D50700" + str(bytearray(list(range(0x3D, 0x7E)))).encode("hex")),
+           ("81D40601" + str(bytearray(list(range(0x01, 0x7E)))).encode("hex"), None,
             "08D50701 FFFF0101"),
            ("03D40A", None, "03D50B")]
     dep = nfc.dep.Initiator(ContactlessFrontend(seq))
@@ -352,16 +352,16 @@ def test_bv_p2p_in_nfcf_recv_chaining_lr_2():
     seq = [("11D40001FE000102030405XXXX000X0X20", None,
             "12D50101FE00010203040500000000000E20"),
            ("0CD40600 004000011002010E", None,
-            "0AD50710" + str(bytearray(range(0x01, 0x07))).encode("hex")),
+            "0AD50710" + str(bytearray(list(range(0x01, 0x07)))).encode("hex")),
            ("04D40641", None,
-            "10D50711" + str(bytearray(range(0x07, 0x13))).encode("hex")),
+            "10D50711" + str(bytearray(list(range(0x07, 0x13)))).encode("hex")),
            ("04D40642", None,
-            "1DD50712" + str(bytearray(range(0x13, 0x2C))).encode("hex")),
+            "1DD50712" + str(bytearray(list(range(0x13, 0x2C)))).encode("hex")),
            ("04D40643", None,
-            "33D50713" + str(bytearray(range(0x2C, 0x5B))).encode("hex")),
+            "33D50713" + str(bytearray(list(range(0x2C, 0x5B)))).encode("hex")),
            ("04D40640", None,
-            "67D50700" + str(bytearray(range(0x5B, 0xBE))).encode("hex")),
-           ("C1D40601" + str(bytearray(range(0x01, 0xBE))).encode("hex"), None,
+            "67D50700" + str(bytearray(list(range(0x5B, 0xBE)))).encode("hex")),
+           ("C1D40601" + str(bytearray(list(range(0x01, 0xBE)))).encode("hex"), None,
             "08D50701 FFFF0101"),
            ("03D40A", None, "03D50B")]
     dep = nfc.dep.Initiator(ContactlessFrontend(seq))
@@ -375,16 +375,16 @@ def test_bv_p2p_in_nfcf_recv_chaining_lr_3():
     seq = [("11D40001FE000102030405XXXX000X0X30", None,
             "12D50101FE00010203040500000000000E30"),
            ("0CD40600 004000011002010E", None,
-            "0FD50710" + str(bytearray(range(0x01, 0x0C))).encode("hex")),
+            "0FD50710" + str(bytearray(list(range(0x01, 0x0C)))).encode("hex")),
            ("04D40641", None,
-            "14D50711" + str(bytearray(range(0x0C, 0x1C))).encode("hex")),
+            "14D50711" + str(bytearray(list(range(0x0C, 0x1C)))).encode("hex")),
            ("04D40642", None,
-            "24D50712" + str(bytearray(range(0x1C, 0x3C))).encode("hex")),
+            "24D50712" + str(bytearray(list(range(0x1C, 0x3C)))).encode("hex")),
            ("04D40643", None,
-            "44D50713" + str(bytearray(range(0x3C, 0x7C))).encode("hex")),
+            "44D50713" + str(bytearray(list(range(0x3C, 0x7C)))).encode("hex")),
            ("04D40640", None,
-            "84D50700" + str(bytearray(range(0x7C, 0xFC))).encode("hex")),
-           ("FFD40601" + str(bytearray(range(0x01, 0xFC))).encode("hex"), None,
+            "84D50700" + str(bytearray(list(range(0x7C, 0xFC)))).encode("hex")),
+           ("FFD40601" + str(bytearray(list(range(0x01, 0xFC)))).encode("hex"), None,
             "08D50701 FFFF0101"),
            ("03D40A", None, "03D50B")]
     dep = nfc.dep.Initiator(ContactlessFrontend(seq))
@@ -434,14 +434,14 @@ def test_bv_p2p_in_nfcf_max_payload_size_64():
     seq = [("11D40001FE000102030405XXXX000X0X00", None,
             "12D50101FE00010203040500000000000E30"),
            ("0CD40600 004000011002010E", None,
-            "41D50700" + str(bytearray(range(0x01, 0x3E))).encode("hex")),
-           ("41D40601" + str(bytearray(range(0x01, 0x3E))).encode("hex"), None,
+            "41D50700" + str(bytearray(list(range(0x01, 0x3E)))).encode("hex")),
+           ("41D40601" + str(bytearray(list(range(0x01, 0x3E)))).encode("hex"), None,
             "08D50701 FFFF0101"),
            ("03D40A", None, "03D50B")]
     dep = nfc.dep.Initiator(ContactlessFrontend(seq))
     assert dep.activate(brs=1, lr=0) == ""
     loop = dep.exchange("004000011002010E".decode("hex"), 1)
-    assert loop == str(bytearray(range(0x01, 0x3E)))
+    assert loop == str(bytearray(list(range(0x01, 0x3E))))
     assert dep.exchange(loop, 1) == "FFFF0101".decode("hex")
     assert dep.deactivate()
 
@@ -450,14 +450,14 @@ def test_bv_p2p_in_nfcf_max_payload_size_128():
     seq = [("11D40001FE000102030405XXXX000X0X10", None,
             "12D50101FE00010203040500000000000E30"),
            ("0CD40600 004000011002010E", None,
-            "81D50700" + str(bytearray(range(0x01, 0x7E))).encode("hex")),
-           ("81D40601" + str(bytearray(range(0x01, 0x7E))).encode("hex"), None,
+            "81D50700" + str(bytearray(list(range(0x01, 0x7E)))).encode("hex")),
+           ("81D40601" + str(bytearray(list(range(0x01, 0x7E)))).encode("hex"), None,
             "08D50701 FFFF0101"),
            ("03D40A", None, "03D50B")]
     dep = nfc.dep.Initiator(ContactlessFrontend(seq))
     assert dep.activate(brs=1, lr=1) == ""
     loop = dep.exchange("004000011002010E".decode("hex"), 1)
-    assert loop == str(bytearray(range(0x01, 0x7E)))
+    assert loop == str(bytearray(list(range(0x01, 0x7E))))
     assert dep.exchange(loop, 1) == "FFFF0101".decode("hex")
     assert dep.deactivate()
 
@@ -466,14 +466,14 @@ def test_bv_p2p_in_nfcf_max_payload_size_192():
     seq = [("11D40001FE000102030405XXXX000X0X20", None,
             "12D50101FE00010203040500000000000E30"),
            ("0CD40600 004000011002010E", None,
-            "C1D50700" + str(bytearray(range(0x01, 0xBE))).encode("hex")),
-           ("C1D40601" + str(bytearray(range(0x01, 0xBE))).encode("hex"), None,
+            "C1D50700" + str(bytearray(list(range(0x01, 0xBE)))).encode("hex")),
+           ("C1D40601" + str(bytearray(list(range(0x01, 0xBE)))).encode("hex"), None,
             "08D50701 FFFF0101"),
            ("03D40A", None, "03D50B")]
     dep = nfc.dep.Initiator(ContactlessFrontend(seq))
     assert dep.activate(brs=1, lr=2) == ""
     loop = dep.exchange("004000011002010E".decode("hex"), 1)
-    assert loop == str(bytearray(range(0x01, 0xBE)))
+    assert loop == str(bytearray(list(range(0x01, 0xBE))))
     assert dep.exchange(loop, 1) == "FFFF0101".decode("hex")
     assert dep.deactivate()
 
@@ -482,14 +482,14 @@ def test_bv_p2p_in_nfcf_max_payload_size_254():
     seq = [("11D40001FE000102030405XXXX000X0X20", None,
             "12D50101FE00010203040500000000000E30"),
            ("0CD40600 004000011002010E", None,
-            "FFD50700" + str(bytearray(range(0x01, 0xFC))).encode("hex")),
-           ("FFD40601" + str(bytearray(range(0x01, 0xFC))).encode("hex"), None,
+            "FFD50700" + str(bytearray(list(range(0x01, 0xFC)))).encode("hex")),
+           ("FFD40601" + str(bytearray(list(range(0x01, 0xFC)))).encode("hex"), None,
             "08D50701 FFFF0101"),
            ("03D40A", None, "03D50B")]
     dep = nfc.dep.Initiator(ContactlessFrontend(seq))
     assert dep.activate(brs=1, lr=2) == ""
     loop = dep.exchange("004000011002010E".decode("hex"), 1)
-    assert loop == str(bytearray(range(0x01, 0xFC)))
+    assert loop == str(bytearray(list(range(0x01, 0xFC))))
     assert dep.exchange(loop, 1) == "FFFF0101".decode("hex")
     assert dep.deactivate()
 

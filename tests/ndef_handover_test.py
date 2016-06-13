@@ -59,7 +59,8 @@ def test_version_higher():
 
 # --------------------------------------------- nfc.ndef.handover.HandoverError
 def test_handover_error_decode():
-    def check((payload, reason, data)):
+    def check(xxx_todo_changeme):
+        (payload, reason, data) = xxx_todo_changeme
         error = nfc.ndef.handover.HandoverError(payload)
         assert error.reason == reason
         assert error.data == data
@@ -69,7 +70,8 @@ def test_handover_error_decode():
         yield check, params
 
 def test_handover_error_encode():
-    def check((payload, reason, data)):
+    def check(xxx_todo_changeme1):
+        (payload, reason, data) = xxx_todo_changeme1
         error = nfc.ndef.handover.HandoverError()
         error.reason = reason
         error.data = data
@@ -85,7 +87,7 @@ def test_handover_error_encode_invalid_reason():
         error = nfc.ndef.handover.HandoverError()
         error.reason = reason
         error.encode()
-    for params in [0] + range(4, 256):
+    for params in [0] + list(range(4, 256)):
         yield check, params
 
 # ------------------------------------- nfc.ndef.handover.HandoverCarrierRecord
@@ -360,7 +362,8 @@ def test_hs_message_encode_error_reason_no_data():
         yield check, reason
         
 def test_hs_message_encode_error_reason_and_valid_data():
-    def check((reason, data, result)):
+    def check(xxx_todo_changeme2):
+        (reason, data, result) = xxx_todo_changeme2
         message = nfc.ndef.HandoverSelectMessage(version="1.2")
         message.error.reason = reason
         message.error.data = data

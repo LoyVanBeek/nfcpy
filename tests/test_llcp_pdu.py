@@ -235,7 +235,7 @@ def test_bv_encode_tlv_sn():
         yield check_bv_encode_tlv, T, V, data
 
 def test_bi_encode_tlv_sn():
-    test_vector = ((6, bytes(bytearray(range(256)))),)
+    test_vector = ((6, bytes(bytearray(list(range(256))))),)
     for T, V in test_vector:
         yield check_bi_encode_tlv, T, V
 
@@ -256,7 +256,7 @@ def test_bv_encode_tlv_sdreq():
         yield check_bv_encode_tlv, T, V, data
 
 def test_bi_encode_tlv_sdreq():
-    test_vector = ((8, (0, bytes(bytearray(range(255))))),)
+    test_vector = ((8, (0, bytes(bytearray(list(range(255)))))),)
     for T, V in test_vector:
         yield check_bi_encode_tlv, T, V
 
@@ -275,7 +275,7 @@ def test_bv_encode_tlv_ecpk():
         yield check_bv_encode_tlv, T, V, data
 
 def test_bi_encode_tlv_ecpk():
-    test_vector = ((10, bytes(bytearray(range(256)))),)
+    test_vector = ((10, bytes(bytearray(list(range(256))))),)
     for T, V in test_vector:
         yield check_bi_encode_tlv, T, V
 
@@ -287,7 +287,7 @@ def test_bv_encode_tlv_rn():
         yield check_bv_encode_tlv, T, V, data
 
 def test_bi_encode_tlv_rn():
-    test_vector = ((11, bytes(bytearray(range(256)))),)
+    test_vector = ((11, bytes(bytearray(list(range(256))))),)
     for T, V in test_vector:
         yield check_bi_encode_tlv, T, V
 
