@@ -74,8 +74,13 @@ class Record(object):
     """
 
     def __init__(self, record_type=None, record_name=None, data=None):
-        self._message_begin = self._message_end = False
-        self._type = self._name = self._data = bytearray()
+        self._message_begin = False
+        self._message_end = False
+        self._type = bytearray()
+        self._name = bytearray()
+        self._data = bytearray()
+
+        # TODO: 'if record_type is None or record_name is None' may be easier to understand
         if not (record_type is None and record_name is None):
             self.type = record_type if record_type is not None else 'unknown'
             if record_name is not None:
@@ -228,7 +233,7 @@ class Record(object):
         """The record identifier as an octet string. Any type that can
         be coverted into a sequence of characters in range(0,256) can
         be assigned."""
-        return str(self._name)
+        return self._name.decode('ascii')
 
     @name.setter
     def name(self, value):
