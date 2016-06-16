@@ -75,7 +75,7 @@ class Record(object):
 
     def __init__(self, record_type=None, record_name=None, data=None):
         self._message_begin = self._message_end = False
-        self._type = self._name = self._data = ''
+        self._type = self._name = self._data = bytearray()
         if not (record_type is None and record_name is None):
             self.type = record_type if record_type is not None else 'unknown'
             if record_name is not None:
@@ -208,7 +208,7 @@ class Record(object):
         or the string 'unknown', or the string 'unchanged', or starts
         with 'urn:nfc:wkt:', or starts with 'urn:nfc:ext:', or matches
         the mime-type format, or matches the absolute-URI format."""
-        return str(self._type)
+        return self._type.decode('ascii')
 
     @type.setter
     def type(self, value):
