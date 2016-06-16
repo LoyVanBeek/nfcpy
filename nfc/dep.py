@@ -21,13 +21,14 @@
 # -----------------------------------------------------------------------------
 
 import logging
+
 log = logging.getLogger(__name__)
 
 import os
 import time
 import collections
 
-import nfc.clf
+from . import clf
 
 class DataExchangeProtocol(object):
     class Counter(object):
@@ -625,7 +626,7 @@ class ATR_REQ_RES(object):
         return (64, 128, 192, 254)[(self.pp >> 4) & 0x3]
     
 class ATR_REQ(ATR_REQ_RES):
-    PDU_CODE = bytearray('\xD4\x00')
+    PDU_CODE = bytearray(b"\xD4\x00")
     PDU_NAME = 'ATR-REQ'
     PDU_SHOW = "{self.PDU_NAME} NFCID3={nfcid3} DID={self.did:02x} "\
         "BS={self.bs:02x} BR={self.br:02x} PP={self.pp:02x} GB={gb}"
@@ -650,7 +651,7 @@ class ATR_REQ(ATR_REQ_RES):
         return data + self.gb
     
 class ATR_RES(ATR_REQ_RES):
-    PDU_CODE = bytearray('\xD5\x01')
+    PDU_CODE = bytearray(b"\xD5\x01")
     PDU_NAME = 'ATR-RES'
     PDU_SHOW = "{self.PDU_NAME} NFCID3={nfcid3} DID={self.did:02x} "\
         "BS={self.bs:02x} BR={self.br:02x} TO={self.to:02x} "\
@@ -689,10 +690,10 @@ class PSL_REQ_RES(object):
             try:
                 return cls(*data[2:])
             except ValueError:
-                raise ProtocolError("invalid format of the " + cls.PDU_NAME)
+                raise clf.ProtocolError("invalid format of the " + cls.PDU_NAME)
 
 class PSL_REQ(PSL_REQ_RES):
-    PDU_CODE = bytearray('\xD4\x04')
+    PDU_CODE = bytearray(b"\xD4\0x0")
     PDU_NAME = 'PSL-REQ'
     PDU_SHOW = "{name} DID={self.did} BRS={self.brs:02x}, FSL={self.fsl:02x}"
     
@@ -715,7 +716,7 @@ class PSL_REQ(PSL_REQ_RES):
         return (64, 128, 192, 254)[self.fsl & 0x03]
 
 class PSL_RES(PSL_REQ_RES):
-    PDU_CODE = bytearray('\xD5\x05')
+    PDU_CODE = bytearray(b"\xD5\x05")
     PDU_NAME = 'PSL-RES'
     PDU_SHOW = "{name} DID={self.did}"
     
@@ -762,7 +763,7 @@ class DEP_REQ_RES(object):
                 did = data.pop(0) if pfb.did else None
                 nad = data.pop(0) if pfb.nad else None
             except IndexError:
-                raise ProtocolError("invalid format of the " + cls.PDU_NAME)
+                raise clf.ProtocolError("invalid format of the " + cls.PDU_NAME)
             return cls(pfb, did, nad, data)
 
     def encode(self):
@@ -774,11 +775,11 @@ class DEP_REQ_RES(object):
         return data + self.data
 
 class DEP_REQ(DEP_REQ_RES):
-    PDU_CODE = bytearray('\xD4\x06')
+    PDU_CODE = bytearray(b"\xD4\x06")
     PDU_NAME = 'DEP-REQ'
     
 class DEP_RES(DEP_REQ_RES):
-    PDU_CODE = bytearray('\xD5\x07')
+    PDU_CODE = bytearray(b"\xD5\x07")
     PDU_NAME = 'DEP-RES'
     
 class DSL_REQ_RES(object):
@@ -792,27 +793,27 @@ class DSL_REQ_RES(object):
     def decode(cls, data):
         if data.startswith(cls.PDU_CODE):
             if len(data) > 3:
-                raise ProtocolError("invalid format of the " + cls.PDU_NAME)
+                raise clf.ProtocolError("invalid format of the " + cls.PDU_NAME)
             return cls(data[2] if len(data) == 3 else None)
         
     def encode(self):
         return self.PDU_CODE + ('' if self.did is None else chr(self.did))
     
 class DSL_REQ(DSL_REQ_RES):
-    PDU_CODE = bytearray('\xD4\x08')
+    PDU_CODE = bytearray(b"\xD4\x08")
     PDU_NAME = 'DSL-REQ'
     
 class DSL_RES(DSL_REQ_RES):
-    PDU_CODE = bytearray('\xD5\x09')
+    PDU_CODE = bytearray(b"\xD5\x09")
     PDU_NAME = 'DSL-RES'
 
 class RLS_REQ_RES(DSL_REQ_RES):
     pass
 
 class RLS_REQ(RLS_REQ_RES):
-    PDU_CODE = bytearray('\xD4\x0A')
+    PDU_CODE = bytearray(b"\xD4\x0A")
     PDU_NAME = 'RLS-REQ'
     
 class RLS_RES(RLS_REQ_RES):
-    PDU_CODE = bytearray('\xD5\x0B')
+    PDU_CODE = bytearray(b"\xD5\x0B")
     PDU_NAME = 'RLS-RES'
