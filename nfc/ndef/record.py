@@ -26,18 +26,20 @@
 #   - does not handle chunked records
 
 import logging
+
 log = logging.getLogger(__name__)
 
 import struct
 import io
 import re
 
-#import nfc.ndef
-from error import LengthError, FormatError
+# import nfc.ndef
+from . import error
 
 type_name_prefix = (
     '', 'urn:nfc:wkt:', '', '', 'urn:nfc:ext:', 'unknown', 'unchanged')
-    
+
+
 class Record(object):
     """Wraps an NDEF record and provides getting and setting of the
     record type name (:attr:`type`), record identifier (:attr:`name`)
@@ -66,11 +68,11 @@ class Record(object):
     by regular expressions matching the either the media-type format
     'type-name/subtype-name' or absolute URI format 'scheme:hier-part'
 
-    >>> nfc.ndef.Record('urn:nfc:wkt:T', 'id', b'\x02enHello World')
-    >>> nfc.ndef.Record('urn:nfc:wkt:T', data=b'\x02enHello World')
-    >>> nfc.ndef.Record(data=b'\xd1\x01\x0eT\x02enHello World')
+    >>> Record('urn:nfc:wkt:T', 'id', b'\x02enHello World')
+    >>> Record('urn:nfc:wkt:T', data=b'\x02enHello World')
+    >>> Record(data=b'\xd1\x01\x0eT\x02enHello World')
     """
-    
+
     def __init__(self, record_type=None, record_name=None, data=None):
         self._message_begin = self._message_end = False
         self._type = self._name = self._data = ''
@@ -90,13 +92,13 @@ class Record(object):
 
     def _read(self, f):
         """Parse an NDEF record from a file-like object."""
-        
+
         try:
             self.header = ord(f.read(1))
         except TypeError:
             log.debug("buffer underflow at offset {0}".format(f.tell()))
-            raise LengthError("insufficient data to parse")
-        
+            raise error.LengthError("insufficient data to parse")
+
         mbf = bool(self.header & 0x80)
         mef = bool(self.header & 0x40)
         cff = bool(self.header & 0x20)
@@ -106,17 +108,17 @@ class Record(object):
 
         try:
             type_length = ord(f.read(1))
-            if srf: # short record
+            if srf:  # short record
                 data_length = ord(f.read(1))
-            else: # 32-bit length
+            else:  # 32-bit length
                 data_length = struct.unpack('>L', f.read(4))[0]
-            if ilf: # id length present
+            if ilf:  # id length present
                 name_length = ord(f.read(1))
             else:
                 name_length = 0
         except (TypeError, struct.error):
             log.debug("buffer underflow at offset {0}".format(f.tell()))
-            raise LengthError("insufficient data to parse")
+            raise error.LengthError("insufficient data to parse")
 
         try:
             record_type = f.read(type_length)
@@ -127,18 +129,18 @@ class Record(object):
             assert len(record_data) == data_length
         except AssertionError:
             log.debug("buffer underflow at offset {0}".format(f.tell()))
-            raise LengthError("insufficient data to parse")
+            raise error.LengthError("insufficient data to parse")
 
         if tnf in (0, 5, 6) and len(record_type) > 0:
             s = "ndef type name format {0} doesn't allow a type string"
-            raise FormatError( s.format(tnf) )
+            raise error.FormatError(s.format(tnf))
         if tnf in (1, 2, 3, 4) and len(record_type) == 0:
             s = "ndef type name format {0} requires a type string"
-            raise FormatError( s.format(tnf) )
+            raise error.FormatError(s.format(tnf))
         if tnf == 0 and len(record_data) > 0:
             s = "ndef type name format {0} doesn't allow a payload"
-            raise FormatError( s.format(tnf) )
-            
+            raise error.FormatError(s.format(tnf))
+
         self._message_begin, self._message_end = mbf, mef
         self._type = bytearray(type_name_prefix[tnf] + record_type)
         self._name = bytearray(record_name)
@@ -152,21 +154,29 @@ class Record(object):
         record_type = self.type
         record_name = self.name
         record_data = self.data
-        
+
         if record_type == '':
-            header_flags = 0; record_name = ''; record_data = ''
+            header_flags = 0;
+            record_name = '';
+            record_data = ''
         elif record_type.startswith("urn:nfc:wkt:"):
-            header_flags = 1; record_type = record_type[12:]
+            header_flags = 1;
+            record_type = record_type[12:]
         elif re.match(r'[a-zA-Z0-9-]+/[a-zA-Z0-9-+.]+', record_type):
-            header_flags = 2; record_type = record_type
+            header_flags = 2;
+            record_type = record_type
         elif re.match(r'[a-zA-Z][a-zA-Z0-9+-.]*://', record_type):
-            header_flags = 3; record_type = record_type
+            header_flags = 3;
+            record_type = record_type
         elif record_type.startswith("urn:nfc:ext:"):
-            header_flags = 4; record_type = record_type[12:]
+            header_flags = 4;
+            record_type = record_type[12:]
         elif record_type == 'unknown':
-            header_flags = 5; record_type = ''
+            header_flags = 5;
+            record_type = ''
         elif record_type == 'unchanged':
-            header_flags = 6; record_type = ''
+            header_flags = 6;
+            record_type = ''
 
         type_length = len(record_type)
         data_length = len(record_data)
@@ -204,11 +214,11 @@ class Record(object):
     def type(self, value):
         value = str(value)
         if (value in ('', 'unknown', 'unchanged') or
-            value.startswith("urn:nfc:wkt:") or
-            value.startswith("urn:nfc:ext:") or
-            re.match(r'[a-zA-Z0-9-]+/[a-zA-Z0-9-+.]+', value) or
-            re.match(r'[a-zA-Z][a-zA-Z0-9+-.]*://', value)):
-            self._type = bytearray(value)
+                value.startswith("urn:nfc:wkt:") or
+                value.startswith("urn:nfc:ext:") or
+                re.match(r'[a-zA-Z0-9-]+/[a-zA-Z0-9-+.]+', value) or
+                re.match(r'[a-zA-Z][a-zA-Z0-9+-.]*://', value)):
+            self._type = bytearray(value, 'ascii')
         else:
             log.error("'{0}' is not an acceptable record type".format(value))
             raise ValueError("invalid record type")
@@ -222,7 +232,7 @@ class Record(object):
 
     @name.setter
     def name(self, value):
-        self._name = bytearray(str(value))
+        self._name = bytearray(str(value), 'ascii')
 
     @property
     def data(self):
@@ -233,7 +243,7 @@ class Record(object):
 
     @data.setter
     def data(self, value):
-        self._data = bytearray(str(value))
+        self._data = bytearray(str(value), 'ascii')
 
     def __iter__(self):
         from itertools import islice
@@ -247,9 +257,9 @@ class Record(object):
 
     def __repr__(self):
         return "nfc.ndef.Record('{0}', '{1}', '{2}')".format(
-            self.type.encode('string_escape'),
-            self.name.encode('string_escape'),
-            self.data.encode('string_escape'))
+            self.type.encode('unicode_escape'),
+            self.name.encode('unicode_escape'),
+            self.data.encode('unicode_escape'))
 
     def pretty(self, indent=0):
         """Returns a string with a formatted representation that might
@@ -264,7 +274,8 @@ class Record(object):
         lwidth = max([len(line[0]) for line in lines])
         lines = [line[0].ljust(lwidth) + " = " + line[1] for line in lines]
         return ("\n").join([indent + line for line in lines])
-        
+
+
 class RecordList(list):
     """A specialized list type that only accepts :class:`Record` objects."""
 
@@ -272,7 +283,7 @@ class RecordList(list):
         super(RecordList, self).__init__()
         for item in iterable:
             self.append(item)
-        
+
     def __setitem__(self, key, value):
         if not isinstance(value, Record):
             raise TypeError("RecordList only accepts Record objects")
@@ -286,4 +297,3 @@ class RecordList(list):
     def extend(self, iterable):
         for item in iterable:
             self.append(item)
-

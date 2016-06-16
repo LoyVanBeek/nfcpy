@@ -23,12 +23,14 @@
 # message.py -- NDEF message handling
 #
 import logging
+
 log = logging.getLogger(__name__)
 
 import io
 import copy
-# import nfc.ndef
-from record import Record
+from .record import Record
+from . import error
+
 
 class Message(object):
     """Wraps a sequence of NDEF records and provides methods for
@@ -40,12 +42,12 @@ class Message(object):
     with those records in order. One or more :class:`Record`
     arguments produce a Message with those records in order.
 
-    >>> nfc.ndef.Message(b'\\x10\\x00\\x00')     # NDEF data bytes
-    >>> nfc.ndef.Message(bytearray([16,0,0])) # NDEF data bytes
-    >>> nfc.ndef.Message([record1, record2])  # list of records
-    >>> nfc.ndef.Message(record1, record2)    # two record args
+    >>> Message(b'\\x10\\x00\\x00')     # NDEF data bytes
+    >>> Message(bytearray([16,0,0])) # NDEF data bytes
+    >>> Message([record1, record2])  # list of records
+    >>> Message(record1, record2)    # two record args
     """
-    
+
     def __init__(self, *args):
         self._records = list()
         if len(args) == 1:
@@ -57,16 +59,17 @@ class Message(object):
                 self.append(args[0])
             elif isinstance(args[0], (list, tuple)):
                 self.extend(args[0])
-            else: raise TypeError("invalid argument type")
+            else:
+                raise TypeError("invalid argument type")
         elif len(args) > 1:
             self.extend(args)
-        
+
     def _read(self, f):
         log.debug("parse ndef message at offset {0}".format(f.tell()))
         record = Record(data=f)
         if record._message_begin == False:
             log.error("message begin flag not set at begin of ndef")
-            raise nfc.ndef.FormatError("message begin flag not set")
+            raise error.FormatError("message begin flag not set")
         self._records.append(record)
         while self._records[-1]._message_end == False:
             self._records.append(Record(data=f))
@@ -83,7 +86,7 @@ class Message(object):
 
     def __repr__(self):
         return 'nfc.ndef.Message(' + repr(self._records) + ')'
-    
+
     def __str__(self):
         stream = io.BytesIO()
         self._write(stream)
@@ -92,7 +95,7 @@ class Message(object):
 
     def __eq__(self, other):
         return str(self) == str(other)
-    
+
     def __len__(self):
         return len(self._records)
 
@@ -101,7 +104,7 @@ class Message(object):
 
     def __setitem__(self, key, value):
         if not (isinstance(value, Record) or
-                all([isinstance(elem, Record) for elem in value])):
+                    all([isinstance(elem, Record) for elem in value])):
             raise TypeError("only Record objects are accepted")
         self._records[key] = value
 
@@ -111,7 +114,7 @@ class Message(object):
     def append(self, record):
         """Add a record to the end of the message. The *record*
         argument must be an instance of :class:`Record`."""
-        
+
         if not isinstance(record, Record):
             raise TypeError("an Record object is required")
         self._records.append(copy.copy(record))
@@ -125,7 +128,7 @@ class Message(object):
             if not isinstance(record, Record):
                 raise TypeError("only Record objects are accepted")
             self._records.append(copy.copy(record))
-        
+
     def insert(self, i, record):
         """Insert a record at the given position. The first argument
         *i* is the index of the record before which to insert, so
@@ -133,7 +136,7 @@ class Message(object):
         and message.insert(len(message), record) is equivalent to
         message.append(record). The second argument *record* must be
         an instance of :class:`Record`."""
-        
+
         if not isinstance(record, Record):
             raise TypeError("an Record object is required")
         self._records.append(copy.copy(record))
@@ -164,7 +167,7 @@ class Message(object):
         pretty-printable."""
         lines = list()
         for index, record in enumerate(self._records):
-            lines.append(("record {0}".format(index+1),))
+            lines.append(("record {0}".format(index + 1),))
             lines.append(("  type", repr(record.type)))
             lines.append(("  name", repr(record.name)))
             lines.append(("  data", repr(record.data)))
@@ -172,4 +175,3 @@ class Message(object):
         lines = [(line[0].ljust(lwidth),) + line[1:] for line in lines]
         lines = [" = ".join(line) for line in lines]
         return ("\n").join([line for line in lines])
-        
