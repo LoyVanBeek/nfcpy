@@ -101,6 +101,16 @@ class Record(object):
     def _read(self, f):
         """Parse an NDEF record from a file-like object."""
 
+        def debug_print(f):
+            if f.seekable():
+                pos = f.tell()
+                content = str(f.read())
+                print(content)
+                f.seek(pos)
+                return content
+            else:
+                raise ValueError('Stream is not seekable, cannot print without disturbance to normal process')
+
         try:
             self.header = ord(f.read(1))
         except TypeError:
@@ -168,7 +178,7 @@ class Record(object):
         if record_type_str == '':
             header_flags = 0
             record_name_str = ''
-            record_data = ''
+            record_data = b''
         elif record_type_str.startswith("urn:nfc:wkt:"):
             header_flags = 1
             record_type_str = record_type_str[12:]
@@ -208,9 +218,9 @@ class Record(object):
         if name_length > 0:
             f.write(struct.pack(">B", name_length))
 
-        f.write(self._type)
-        f.write(self._name)
-        f.write(self._data)
+        f.write(bytes(record_type_str, 'ascii'))
+        f.write(bytes(record_name_str, 'ascii'))
+        f.write(record_data)
 
     @property
     def type(self):
