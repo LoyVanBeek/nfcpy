@@ -86,6 +86,12 @@ class Message(object):
             for record in self._records:
                 record._write(f)
 
+    def to_bytes(self):
+        stream = io.BytesIO()
+        self._write(stream)
+        stream.seek(0, 0)
+        return bytes(stream.read())
+
     def __repr__(self):
         return 'nfc.ndef.Message(' + repr(self._records) + ')'
 

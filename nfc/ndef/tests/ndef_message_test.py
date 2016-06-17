@@ -49,17 +49,17 @@ class TestMessageInit(unittest.TestCase):
 
     def test_generate_bytestr(self):
         message = Message(b"\xD0\x00\x00")
-        assert str(message) == b"\xD0\x00\x00"
+        assert message.to_bytes() == b"\xD0\x00\x00"
 
     def test_init_args_one_record(self):
         record = Record()
         message = Message(record)
-        assert str(message) == b"\xD0\x00\x00"
+        assert message.to_bytes() == b"\xD0\x00\x00"
 
     def test_init_args_two_records(self):
         record = Record()
         message = Message(record, record)
-        assert str(message) == b"\x90\x00\x00\x50\x00\x00"
+        assert message.to_bytes() == b"\x90\x00\x00\x50\x00\x00"
 
 class TestMessageMethods(unittest.TestCase):
     def test_method_length(self):
