@@ -180,7 +180,7 @@ class TestGeneration(unittest.TestCase):
         self.assertEqual(bytes(record), b'\xD0\x00\x00')
 
     def test_generate_parsed_2(self):
-        import ipdb; ipdb.set_trace()
+        # import ipdb; ipdb.set_trace()
         record = Record(data=b'\xD1\x01\x00T')
         self.assertEqual(bytes(record), b'\xD1\x01\x00T')
 
@@ -206,49 +206,49 @@ class TestGeneration(unittest.TestCase):
 
     def test_generate_record_type_1(self):
         record = Record()
-        self.assertEqual(str(record), '\x10\x00\x00')
+        self.assertEqual(bytes(record), b'\x10\x00\x00')
 
     def test_generate_record_type_2(self):
         record = Record()
         record.type = 'urn:nfc:wkt:T'
-        self.assertEqual(str(record), '\x11\x01\x00T')
+        self.assertEqual(bytes(record), b'\x11\x01\x00T')
 
     def test_generate_record_type_3(self):
         record = Record()
         record.type = 'text/plain'
-        self.assertEqual(str(record), '\x12\x0A\x00text/plain')
+        self.assertEqual(bytes(record), b'\x12\x0A\x00text/plain')
 
     def test_generate_record_type_4(self):
         record = Record()
         record.type = 'http://example.com/type.dtd'
-        self.assertEqual(str(record), '\x13\x1B\x00http://example.com/type.dtd')
+        self.assertEqual(bytes(record), b'\x13\x1B\x00http://example.com/type.dtd')
 
     def test_generate_record_type_5(self):
         record = Record()
         record.type = 'urn:nfc:ext:example.com:type'
-        self.assertEqual(str(record), '\x14\x10\x00example.com:type')
+        self.assertEqual(bytes(record), b'\x14\x10\x00example.com:type')
 
     def test_generate_record_type_6(self):
         record = Record()
         record.type = 'unknown'
-        self.assertEqual(str(record), '\x15\x00\x00')
+        self.assertEqual(bytes(record), b'\x15\x00\x00')
 
     def test_generate_record_type_7(self):
         record = Record()
         record.type = 'unchanged'
-        self.assertEqual(str(record), '\x16\x00\x00')
+        self.assertEqual(bytes(record), b'\x16\x00\x00')
 
     def test_generate_record_type_name(self):
         record = Record('urn:nfc:wkt:T', 'identifier')
-        self.assertEqual(str(record), '\x19\x01\x00\x0ATidentifier')
+        self.assertEqual(bytes(record), b'\x19\x01\x00\x0ATidentifier')
 
     def test_generate_record_type_name_data(self):
         record = Record('urn:nfc:wkt:T', 'identifier', 'payload')
-        self.assertEqual(str(record), '\x19\x01\x07\x0ATidentifierpayload')
+        self.assertEqual(bytes(record), b'\x19\x01\x07\x0ATidentifierpayload')
 
     def test_generate_record_long_payload(self):
         record = Record('urn:nfc:wkt:T', 'id', bytearray(256))
-        self.assertEqual(str(record), '\x09\x01\x00\x00\x01\x00\x02Tid' + 256 * '\x00')
+        self.assertEqual(bytes(record), b'\x09\x01\x00\x00\x01\x00\x02Tid' + 256 * b'\x00')
 
 class TestDecodeErrors(unittest.TestCase):
 
