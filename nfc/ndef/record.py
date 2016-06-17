@@ -40,6 +40,16 @@ type_name_prefix = (
     '', 'urn:nfc:wkt:', '', '', 'urn:nfc:ext:', 'unknown', 'unchanged')
 
 
+def debug_print(f):
+    if f.seekable():
+        pos = f.tell()
+        content = str(f.read())
+        print(content)
+        f.seek(pos)
+        return content
+    else:
+        raise ValueError('Stream is not seekable, cannot print without disturbance to normal process')
+
 class Record(object):
     """Wraps an NDEF record and provides getting and setting of the
     record type name (:attr:`type`), record identifier (:attr:`name`)
@@ -100,16 +110,6 @@ class Record(object):
 
     def _read(self, f):
         """Parse an NDEF record from a file-like object."""
-
-        def debug_print(f):
-            if f.seekable():
-                pos = f.tell()
-                content = str(f.read())
-                print(content)
-                f.seek(pos)
-                return content
-            else:
-                raise ValueError('Stream is not seekable, cannot print without disturbance to normal process')
 
         try:
             self.header = ord(f.read(1))
@@ -268,12 +268,14 @@ class Record(object):
         return islice(self.to_bytes(), None)
 
     def __str__(self):
-        stream = io.BytesIO()
-        self._write(stream)
-        stream.seek(0, 0)
-        return str(stream.read())
+        """Readable format, for humans"""
+        return "Record(type='{0}', name='{1}', data={2})".format(
+            self.type,
+            self.name,
+            self.data)
 
     def __repr__(self):
+        """Unambiguous format, for computers"""
         return "nfc.ndef.Record('{0}', '{1}', {2})".format(
             self.type,
             self.name,

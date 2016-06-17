@@ -165,7 +165,7 @@ class TestGeneration(unittest.TestCase):
 
     def test_generate_string(self):
         record = Record()
-        self.assertEqual(str(record), '\x10\x00\x00')
+        self.assertEqual(str(record), "Record(type='', name='', data=b'')")
         
     def test_generate_bytearray(self):
         record = Record()
@@ -180,7 +180,6 @@ class TestGeneration(unittest.TestCase):
         self.assertEqual(bytes(record), b'\xD0\x00\x00')
 
     def test_generate_parsed_2(self):
-        # import ipdb; ipdb.set_trace()
         record = Record(data=b'\xD1\x01\x00T')
         self.assertEqual(record.type, 'urn:nfc:wkt:T')  # Include it in the type's string representation
         self.assertEqual(bytes(record), b'\xD1\x01\x00T')  # But exclude from byte representation
