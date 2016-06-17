@@ -32,7 +32,7 @@ from ..error import FormatError, LengthError
 
 from nose.tools import raises
 
-class TestRecord(unittest.TestCase):
+class TestRecordInit(unittest.TestCase):
 
     def test_init_args_none(self):
         record = Record()
@@ -103,7 +103,9 @@ class TestRecord(unittest.TestCase):
         except TypeError: pass
         else: raise AssertionError("TypeError not raised")
 
-    def test_parse_record_type(self):
+class TestRecordDecoding(unittest.TestCase):
+
+    def test_decode_record_type(self):
         record = Record(data=b'\xD0\x00\x00')
         self.assertEqual(record.type, '')
         record = Record(data='\xD1\x01\x00T')
@@ -118,6 +120,15 @@ class TestRecord(unittest.TestCase):
         self.assertEqual(record.type, 'unknown')
         record = Record(data=b'\xD6\x00\x00')
         self.assertEqual(record.type, 'unchanged')
+
+    def test_decode_record_long_payload(self):
+        data = b'\x09\x01\x00\x00\x01\x00\x02Tid' + bytes(256)
+        record = Record(data=data)
+        self.assertEqual(record.type, 'urn:nfc:wkt:T')
+        self.assertEqual(record.name, 'id')
+        self.assertEqual(record.data, str(bytearray(256)))
+
+class TestSetRecordType(unittest.TestCase):
 
     def test_set_record_type(self):
         record = Record()
@@ -137,6 +148,8 @@ class TestRecord(unittest.TestCase):
         self.assertEqual(record.type, '')
         try: record.type = 1
         except ValueError: pass
+
+class TestGeneration(unittest.TestCase):
 
     def test_generate_string(self):
         record = Record()
@@ -225,13 +238,7 @@ class TestRecord(unittest.TestCase):
         record = Record('urn:nfc:wkt:T', 'id', bytearray(256))
         self.assertEqual(str(record), '\x09\x01\x00\x00\x01\x00\x02Tid' + 256 * '\x00')
 
-    def test_decode_record_long_payload(self):
-        # import ipdb; ipdb.set_trace()
-        data = b'\x09\x01\x00\x00\x01\x00\x02Tid' + bytes(256)
-        record = Record(data=data)
-        self.assertEqual(record.type, 'urn:nfc:wkt:T')
-        self.assertEqual(record.name, 'id')
-        self.assertEqual(record.data, str(bytearray(256)))
+class TestDecodeErrors(unittest.TestCase):
 
     @raises(LengthError)
     def test_decode_invalid_length_01(self):
@@ -302,6 +309,8 @@ class TestRecord(unittest.TestCase):
         Record(data=b'\x10\x00\x01\x00')
 
     #------------------------------------------------------------------- RecordList
+
+class TestRecordList(unittest.TestCase):
 
     def test_bv_record_list_init(self):
         rl = RecordList([Record()])
