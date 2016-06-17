@@ -29,12 +29,39 @@ from ..record import Record
 from ..message import Message
 from ..error import FormatError, LengthError
 
-class TestMessage(unittest.TestCase):
+class TestMessageInit(unittest.TestCase):
 
     def test_init_args_none(self):
         message = Message()
         assert isinstance(message, Message)
 
+    def test_init_args_bytestr(self):
+        message = Message(b"\xD0\x00\x00")
+        assert len(message) == 1
+
+    def test_init_args_bytearray(self):
+        message = Message(bytearray("\xD0\x00\x00"))
+        assert len(message) == 1
+
+    def test_init_args_bytestream(self):
+        message = Message(io.BytesIO(b"\xD0\x00\x00"))
+        assert len(message) == 1
+
+    def test_generate_bytestr(self):
+        message = Message(b"\xD0\x00\x00")
+        assert str(message) == b"\xD0\x00\x00"
+
+    def test_init_args_one_record(self):
+        record = Record()
+        message = Message(record)
+        assert str(message) == b"\xD0\x00\x00"
+
+    def test_init_args_two_records(self):
+        record = Record()
+        message = Message(record, record)
+        assert str(message) == b"\x90\x00\x00\x50\x00\x00"
+
+class TestMessageMethods(unittest.TestCase):
     def test_method_length(self):
         message = Message()
         assert len(message) == 0
@@ -62,31 +89,7 @@ class TestMessage(unittest.TestCase):
         assert len(message) == 1
         assert isinstance(message[0], Record)
 
-    def test_init_args_bytestr(self):
-        message = Message(b"\xD0\x00\x00")
-        assert len(message) == 1
-
-    def test_init_args_bytearray(self):
-        message = Message(bytearray("\xD0\x00\x00"))
-        assert len(message) == 1
-
-    def test_init_args_bytestream(self):
-        message = Message(io.BytesIO(b"\xD0\x00\x00"))
-        assert len(message) == 1
-
-    def test_generate_bytestr(self):
-        message = Message(b"\xD0\x00\x00")
-        assert str(message) == b"\xD0\x00\x00"
-
-    def test_init_args_one_record(self):
-        record = Record()
-        message = Message(record)
-        assert str(message) == b"\xD0\x00\x00"
-
-    def test_init_args_two_records(self):
-        record = Record()
-        message = Message(record, record)
-        assert str(message) == b"\x90\x00\x00\x50\x00\x00"
+class TestMessageFailure(unittest.TestCase):
 
     def test_failure_mb_not_set(self):
         try: message = Message(b"\x10\x00\x00")
