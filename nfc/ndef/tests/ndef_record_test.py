@@ -165,7 +165,13 @@ class TestGeneration(unittest.TestCase):
 
     def test_generate_string(self):
         record = Record()
-        self.assertEqual(str(record), "Record(type='', name='', data=b'')")
+        self.assertEqual(str(record), "Record(record_type='', record_name='', data=b'')")
+
+    def test_representation_can_be_evaluated(self):
+        record = Record()
+        representation = str(record)
+        new_record = eval(representation)
+        self.assertEqual(record.__dict__, new_record.__dict__)  # There is no __eq__ on Records so compare values
         
     def test_generate_bytearray(self):
         record = Record()

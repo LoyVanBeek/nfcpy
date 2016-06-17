@@ -269,7 +269,7 @@ class Record(object):
 
     def __str__(self):
         """Readable format, for humans"""
-        return "Record(type='{0}', name='{1}', data={2})".format(
+        return "Record(record_type='{0}', record_name='{1}', data={2})".format(
             self.type,
             self.name,
             self.data)
