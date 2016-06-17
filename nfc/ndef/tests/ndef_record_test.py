@@ -150,35 +150,66 @@ class TestRecord(unittest.TestCase):
         record = Record()
         self.assertEqual(list(record), list(b'\x10\x00\x00'))
         
-    def test_generate_parsed(self):
+    def test_generate_parsed_1(self):
         record = Record(data=b'\xD0\x00\x00')
-        self.assertEqual(str(record), '\xD0\x00\x00')
-        record = Record(data=b'\xD1\x01\x00T')
-        self.assertEqual(str(record), '\xD1\x01\x00T')
-        record = Record(data='\xD2\x0A\x00text/plain')
-        self.assertEqual(str(record), '\xD2\x0A\x00text/plain')
-        record = Record(data='\xD3\x1B\x00http://example.com/type.dtd')
-        self.assertEqual(str(record), '\xD3\x1B\x00http://example.com/type.dtd')
-        record = Record(data='\xD4\x10\x00example.com:type')
-        self.assertEqual(str(record), '\xD4\x10\x00example.com:type')
-        record = Record(data=b'\xD5\x00\x00')
-        self.assertEqual(str(record), '\xD5\x00\x00')
-        record = Record(data=b'\xD6\x00\x00')
-        self.assertEqual(str(record), '\xD6\x00\x00')
+        self.assertEqual(bytes(record), b'\xD0\x00\x00')
 
-    def test_generate_record_type(self):
+    def test_generate_parsed_2(self):
+        import ipdb; ipdb.set_trace()
+        record = Record(data=b'\xD1\x01\x00T')
+        self.assertEqual(bytes(record), b'\xD1\x01\x00T')
+
+    def test_generate_parsed_3(self):
+        record = Record(data=b'\xD2\x0A\x00text/plain')
+        self.assertEqual(bytes(record), b'\xD2\x0A\x00text/plain')
+
+    def test_generate_parsed_4(self):
+        record = Record(data=b'\xD3\x1B\x00http://example.com/type.dtd')
+        self.assertEqual(bytes(record), b'\xD3\x1B\x00http://example.com/type.dtd')
+
+    def test_generate_parsed_5(self):
+        record = Record(data=b'\xD4\x10\x00example.com:type')
+        self.assertEqual(bytes(record), b'\xD4\x10\x00example.com:type')
+
+    def test_generate_parsed_6(self):
+        record = Record(data=b'\xD5\x00\x00')
+        self.assertEqual(bytes(record), b'\xD5\x00\x00')
+
+    def test_generate_parsed_7(self):
+        record = Record(data=b'\xD6\x00\x00')
+        self.assertEqual(bytes(record), b'\xD6\x00\x00')
+
+    def test_generate_record_type_1(self):
         record = Record()
         self.assertEqual(str(record), '\x10\x00\x00')
+
+    def test_generate_record_type_2(self):
+        record = Record()
         record.type = 'urn:nfc:wkt:T'
         self.assertEqual(str(record), '\x11\x01\x00T')
+
+    def test_generate_record_type_3(self):
+        record = Record()
         record.type = 'text/plain'
         self.assertEqual(str(record), '\x12\x0A\x00text/plain')
+
+    def test_generate_record_type_4(self):
+        record = Record()
         record.type = 'http://example.com/type.dtd'
         self.assertEqual(str(record), '\x13\x1B\x00http://example.com/type.dtd')
+
+    def test_generate_record_type_5(self):
+        record = Record()
         record.type = 'urn:nfc:ext:example.com:type'
         self.assertEqual(str(record), '\x14\x10\x00example.com:type')
+
+    def test_generate_record_type_6(self):
+        record = Record()
         record.type = 'unknown'
         self.assertEqual(str(record), '\x15\x00\x00')
+
+    def test_generate_record_type_7(self):
+        record = Record()
         record.type = 'unchanged'
         self.assertEqual(str(record), '\x16\x00\x00')
 
