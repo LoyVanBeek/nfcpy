@@ -243,7 +243,7 @@ class TestGeneration(unittest.TestCase):
         self.assertEqual(bytes(record), b'\x19\x01\x00\x0ATidentifier')
 
     def test_generate_record_type_name_data(self):
-        record = Record('urn:nfc:wkt:T', 'identifier', 'payload')
+        record = Record('urn:nfc:wkt:T', 'identifier', b'payload')
         self.assertEqual(bytes(record), b'\x19\x01\x07\x0ATidentifierpayload')
 
     def test_generate_record_long_payload(self):
