@@ -110,19 +110,19 @@ class TestRecordDecoding(unittest.TestCase):
         self.assertEqual(record.type, '')
 
     def test_decode_record_type_2(self):
-        record = Record(data='\xD1\x01\x00T')
+        record = Record(data=b'\xD1\x01\x00T')
         self.assertEqual(record.type, 'urn:nfc:wkt:T')
 
     def test_decode_record_type_3(self):
-        record = Record(data='\xD2\x0A\x00text/plain')
+        record = Record(data=b'\xD2\x0A\x00text/plain')
         self.assertEqual(record.type, 'text/plain')
 
     def test_decode_record_type_4(self):
-        record = Record(data='\xD3\x1B\x00http://example.com/type.dtd')
+        record = Record(data=b'\xD3\x1B\x00http://example.com/type.dtd')
         self.assertEqual(record.type, 'http://example.com/type.dtd')
 
     def test_decode_record_type_5(self):
-        record = Record(data='\xD4\x10\x00example.com:type')
+        record = Record(data=b'\xD4\x10\x00example.com:type')
         self.assertEqual(record.type, 'urn:nfc:ext:example.com:type')
 
     def test_decode_record_type_6(self):
