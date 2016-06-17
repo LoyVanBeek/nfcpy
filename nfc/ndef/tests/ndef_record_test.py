@@ -138,7 +138,7 @@ class TestRecordDecoding(unittest.TestCase):
         record = Record(data=data)
         self.assertEqual(record.type, 'urn:nfc:wkt:T')
         self.assertEqual(record.name, 'id')
-        self.assertEqual(record.data, str(bytearray(256)))
+        self.assertEqual(record.data, bytearray(256))
 
 class TestSetRecordType(unittest.TestCase):
 
