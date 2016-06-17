@@ -159,36 +159,38 @@ class Record(object):
         """Serialize an NDEF record to a file-like object."""
         log.debug("writing ndef record at offset {0}".format(f.tell()))
 
-        record_type = self.type
-        record_name = self.name
+        header_flags = 0x00
+
+        record_type_str = self.type
+        record_name_str = self.name
         record_data = self.data
 
-        if record_type == '':
-            header_flags = 0;
-            record_name = '';
+        if record_type_str == '':
+            header_flags = 0
+            record_name_str = ''
             record_data = ''
-        elif record_type.startswith("urn:nfc:wkt:"):
-            header_flags = 1;
-            record_type = record_type[12:]
-        elif re.match(r'[a-zA-Z0-9-]+/[a-zA-Z0-9-+.]+', record_type):
-            header_flags = 2;
-            record_type = record_type
-        elif re.match(r'[a-zA-Z][a-zA-Z0-9+-.]*://', record_type):
-            header_flags = 3;
-            record_type = record_type
-        elif record_type.startswith("urn:nfc:ext:"):
-            header_flags = 4;
-            record_type = record_type[12:]
-        elif record_type == 'unknown':
-            header_flags = 5;
-            record_type = ''
-        elif record_type == 'unchanged':
-            header_flags = 6;
-            record_type = ''
+        elif record_type_str.startswith("urn:nfc:wkt:"):
+            header_flags = 1
+            record_type_str = record_type_str[12:]
+        elif re.match(r'[a-zA-Z0-9-]+/[a-zA-Z0-9-+.]+', record_type_str):
+            header_flags = 2
+            record_type_str = record_type_str
+        elif re.match(r'[a-zA-Z][a-zA-Z0-9+-.]*://', record_type_str):
+            header_flags = 3
+            record_type_str = record_type_str
+        elif record_type_str.startswith("urn:nfc:ext:"):
+            header_flags = 4
+            record_type_str = record_type_str[12:]
+        elif record_type_str == 'unknown':
+            header_flags = 5
+            record_type_str = ''
+        elif record_type_str == 'unchanged':
+            header_flags = 6
+            record_type_str = ''
 
-        type_length = len(record_type)
+        type_length = len(record_type_str)
         data_length = len(record_data)
-        name_length = len(record_name)
+        name_length = len(record_name_str)
 
         if self._message_begin:
             header_flags |= 0x80
@@ -206,9 +208,9 @@ class Record(object):
         if name_length > 0:
             f.write(struct.pack(">B", name_length))
 
-        f.write(record_type)
-        f.write(record_name)
-        f.write(record_data)
+        f.write(self._type)
+        f.write(self._name)
+        f.write(self._data)
 
     @property
     def type(self):
@@ -255,19 +257,25 @@ class Record(object):
 
     def __iter__(self):
         from itertools import islice
-        return islice(str(self), None)
+        return islice(self.to_bytes(), None)
 
     def __str__(self):
         stream = io.BytesIO()
         self._write(stream)
         stream.seek(0, 0)
-        return stream.read()
+        return str(stream.read())
 
     def __repr__(self):
-        return "nfc.ndef.Record('{0}', '{1}', '{2}')".format(
-            self.type.encode('unicode_escape'),
-            self.name.encode('unicode_escape'),
-            self.data.encode('unicode_escape'))
+        return "nfc.ndef.Record('{0}', '{1}', {2})".format(
+            self.type,
+            self.name,
+            self.data)
+
+    def to_bytes(self):
+        stream = io.BytesIO()
+        self._write(stream)
+        stream.seek(0, 0)
+        return bytes(stream.read())
 
     def pretty(self, indent=0):
         """Returns a string with a formatted representation that might

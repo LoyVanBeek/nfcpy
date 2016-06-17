@@ -148,7 +148,7 @@ class TestRecord(unittest.TestCase):
         
     def test_generate_list(self):
         record = Record()
-        self.assertEqual(list(record), list('\x10\x00\x00'))
+        self.assertEqual(list(record), list(b'\x10\x00\x00'))
         
     def test_generate_parsed(self):
         record = Record(data=b'\xD0\x00\x00')
