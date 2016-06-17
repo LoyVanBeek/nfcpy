@@ -195,7 +195,8 @@ class TestRecord(unittest.TestCase):
         self.assertEqual(str(record), '\x09\x01\x00\x00\x01\x00\x02Tid' + 256 * '\x00')
 
     def test_decode_record_long_payload(self):
-        data = '\x09\x01\x00\x00\x01\x00\x02Tid' + str(bytearray(256))
+        # import ipdb; ipdb.set_trace()
+        data = b'\x09\x01\x00\x00\x01\x00\x02Tid' + bytes(256)
         record = Record(data=data)
         self.assertEqual(record.type, 'urn:nfc:wkt:T')
         self.assertEqual(record.name, 'id')

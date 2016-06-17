@@ -88,8 +88,11 @@ class Record(object):
             if data is not None:
                 self.data = data
         elif data is not None:
-            if isinstance(data, (bytearray, str)):
+            if isinstance(data, (bytes, bytearray)):
                 data = io.BytesIO(data)
+            elif isinstance(data, str):
+                data = io.BytesIO(bytes(data, encoding='ascii'))
+
             if isinstance(data, io.IOBase):
                 self._read(data)
             else:
@@ -147,7 +150,7 @@ class Record(object):
             raise error.FormatError(s.format(tnf))
 
         self._message_begin, self._message_end = mbf, mef
-        self._type = bytearray(type_name_prefix[tnf] + record_type)
+        self._type = bytearray(type_name_prefix[tnf], 'ascii') + record_type
         self._name = bytearray(record_name)
         self._data = bytearray(record_data)
         log.debug("parsed {0}".format(repr(self)))
