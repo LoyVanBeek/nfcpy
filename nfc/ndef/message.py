@@ -96,10 +96,7 @@ class Message(object):
         return 'nfc.ndef.Message(' + repr(self._records) + ')'
 
     def __str__(self):
-        stream = io.BytesIO()
-        self._write(stream)
-        stream.seek(0, 0)
-        return stream.read()
+        return 'Message({records})'.format(records=', '.join([str(rec) for rec in self._records]))
 
     def __eq__(self, other):
         return str(self) == str(other)
@@ -183,3 +180,10 @@ class Message(object):
         lines = [(line[0].ljust(lwidth),) + line[1:] for line in lines]
         lines = [" = ".join(line) for line in lines]
         return ("\n").join([line for line in lines])
+
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__)
+            and self.__dict__ == other.__dict__)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)

@@ -171,7 +171,7 @@ class TestGeneration(unittest.TestCase):
         record = Record()
         representation = str(record)
         new_record = eval(representation)
-        self.assertEqual(record.__dict__, new_record.__dict__)  # There is no __eq__ on Records so compare values
+        self.assertEqual(record, new_record)  # There is no __eq__ on Records so compare values
         
     def test_generate_bytearray(self):
         record = Record()

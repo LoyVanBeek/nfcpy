@@ -301,6 +301,13 @@ class Record(object):
         lines = [line[0].ljust(lwidth) + " = " + line[1] for line in lines]
         return ("\n").join([indent + line for line in lines])
 
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__)
+            and self.__dict__ == other.__dict__)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 class RecordList(list):
     """A specialized list type that only accepts :class:`Record` objects."""

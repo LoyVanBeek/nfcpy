@@ -98,3 +98,16 @@ class TestMessageFailure(unittest.TestCase):
     def test_failure_length_error(self):
         try: message = Message(b"\x10\x01\x00")
         except LengthError: pass
+
+class TestMessagePrinting(unittest.TestCase):
+    def test_generate_string(self):
+        record = Record()
+        message = Message(record, record)
+        self.assertEqual(str(message), "Message(Record(record_type='', record_name='', data=b''), Record(record_type='', record_name='', data=b''))")
+
+    def test_representation_can_be_evaluated(self):
+        record = Record()
+        message = Message(record, record)
+        representation = str(message)
+        new_message = eval(representation)
+        self.assertEqual(message, new_message)  # There is no __eq__ on Records so compare values
