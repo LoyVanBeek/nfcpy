@@ -38,64 +38,64 @@ class TestRecordInit(unittest.TestCase):
         record = Record()
         self.assertEqual(record.type, '')
         self.assertEqual(record.name, '')
-        self.assertEqual(record.data, '')
+        self.assertEqual(record.data, bytes(b''))
 
     def test_init_args_type(self):
         record = Record('urn:nfc:wkt:T')
         self.assertEqual(record.type, 'urn:nfc:wkt:T')
         self.assertEqual(record.name, '')
-        self.assertEqual(record.data, '')
+        self.assertEqual(record.data, bytes(b''))
 
     def test_init_args_type_name(self):
         record = Record('urn:nfc:wkt:T', 'identifier')
         self.assertEqual(record.type, 'urn:nfc:wkt:T')
         self.assertEqual(record.name, 'identifier')
-        self.assertEqual(record.data, '')
+        self.assertEqual(record.data, bytes(b''))
 
     def test_init_args_type_name_data_1(self):
-        record = Record('urn:nfc:wkt:T', 'identifier', 'Hello World')
+        record = Record('urn:nfc:wkt:T', 'identifier', bytes(b'Hello World'))
         self.assertEqual(record.type, 'urn:nfc:wkt:T')
         self.assertEqual(record.name, 'identifier')
-        self.assertEqual(record.data, 'Hello World')
+        self.assertEqual(record.data, bytes(b'Hello World'))
 
     def test_init_args_type_data(self):
-        record = Record('urn:nfc:wkt:T', data='Hello World')
+        record = Record('urn:nfc:wkt:T', data=bytes(b'Hello World'))
         self.assertEqual(record.type, 'urn:nfc:wkt:T')
         self.assertEqual(record.name, '')
-        self.assertEqual(record.data, 'Hello World')
+        self.assertEqual(record.data, bytes(b'Hello World'))
 
     def test_init_args_name(self):
         record = Record(record_name='identifier')
         self.assertEqual(record.type, 'unknown')
         self.assertEqual(record.name, 'identifier')
-        self.assertEqual(record.data, '')
+        self.assertEqual(record.data, bytes(b''))
 
     def test_init_args_type_name_data_2(self):
-        record = Record(record_name='identifier', data='Hello World')
+        record = Record(record_name='identifier', data=bytes(b'Hello World'))
         self.assertEqual(record.type, 'unknown')
         self.assertEqual(record.name, 'identifier')
-        self.assertEqual(record.data, 'Hello World')
+        self.assertEqual(record.data, bytes(b'Hello World'))
 
     # def test_init_args_data_string(self):
     #     data=b'\xDA\x0A\x0B\x01' + b'text/plain0Hello World' + 10*b'\x00'
     #     record = Record(data=bytearray(data))
     #     self.assertEqual(record.type, 'text/plain')
     #     self.assertEqual(record.name, '0')
-    #     self.assertEqual(record.data, 'Hello World')
+    #     self.assertEqual(record.data, bytes(b'Hello World'))
 
     def test_init_args_data_bytearray(self):
         data=bytearray(b'\xDA\x0A\x0B\x01text/plain0Hello World' + bytes(10*b'\x00'))
         record = Record(data=data)
         self.assertEqual(record.type, 'text/plain')
         self.assertEqual(record.name, '0')
-        self.assertEqual(record.data, 'Hello World')
+        self.assertEqual(record.data, bytes(b'Hello World'))
 
     def test_init_args_data_bytestream(self):
         data=io.BytesIO(b'\xDA\x0A\x0B\x01text/plain0Hello World' + bytes(10*b'\x00'))
         record = Record(data=data)
         self.assertEqual(record.type, 'text/plain')
         self.assertEqual(record.name, '0')
-        self.assertEqual(record.data, 'Hello World')
+        self.assertEqual(record.data, bytes(b'Hello World'))
         self.assertEqual(data.tell() - data.seek(0, 2), -10)
 
     def test_init_args_data_invalid_type(self):

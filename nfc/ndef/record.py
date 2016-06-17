@@ -246,14 +246,12 @@ class Record(object):
 
     @property
     def data(self):
-        """The record payload as an octet string. Any type that can be
-        coverted into a sequence of characters in range(0,256) can be
-        assigned."""
-        return str(self._data)
+        """The record payload as a bytes. """
+        return bytes(self._data)
 
     @data.setter
     def data(self, value):
-        self._data = bytearray(str(value), 'ascii')
+        self._data = bytearray(value)
 
     def __iter__(self):
         from itertools import islice
