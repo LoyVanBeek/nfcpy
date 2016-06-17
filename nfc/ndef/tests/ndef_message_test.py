@@ -40,7 +40,7 @@ class TestMessageInit(unittest.TestCase):
         assert len(message) == 1
 
     def test_init_args_bytearray(self):
-        message = Message(bytearray("\xD0\x00\x00"))
+        message = Message(bytearray(b"\xD0\x00\x00"))
         assert len(message) == 1
 
     def test_init_args_bytestream(self):

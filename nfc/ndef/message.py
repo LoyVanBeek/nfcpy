@@ -53,8 +53,10 @@ class Message(object):
         if len(args) == 1:
             if isinstance(args[0], io.BytesIO):
                 self._read(args[0])
-            elif isinstance(args[0], (str, bytearray)):
+            elif isinstance(args[0], (bytearray, bytes)):
                 self._read(io.BytesIO(args[0]))
+            elif isinstance(args[0], str):
+                self._read(io.BytesIO(bytes(args[0], encoding='ascii')))
             elif isinstance(args[0], Record):
                 self.append(args[0])
             elif isinstance(args[0], (list, tuple)):
