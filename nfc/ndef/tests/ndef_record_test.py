@@ -367,3 +367,62 @@ class TestRecordList(unittest.TestCase):
         rl = RecordList([Record()])
         rl[0] = "invalid"
 
+class TestEquality(unittest.TestCase):
+    def test_equality1(self):
+        record1 = Record(data=bytes(b'\xDA\x0A\x0B\x01text/plain0Hello World' + bytes(10*b'\x00')))
+        record2 = Record(data=bytes(b'\xDA\x0A\x0B\x01text/plain0Hello World' + bytes(10*b'\x00')))
+
+        self.assertEqual(record1.type, record2.type)
+        self.assertEqual(record1.name, record2.name)
+        self.assertEqual(record1.data, record2.data)
+        self.assertEqual(record1, record2)
+
+    def test_equality2(self):
+        record1 = Record('urn:nfc:wkt:T')
+        record2 = Record('urn:nfc:wkt:T')
+
+        self.assertEqual(record1.type, record2.type)
+        self.assertEqual(record1.name, record2.name)
+        self.assertEqual(record1.data, record2.data)
+        self.assertEqual(record1, record2)
+
+    def test_equality3(self):
+        record1 = Record('urn:nfc:wkt:T', 'identifier', bytes(b'Hello World'))
+        record2 = Record('urn:nfc:wkt:T', 'identifier', bytes(b'Hello World'))
+
+        self.assertEqual(record1.type, record2.type)
+        self.assertEqual(record1.name, record2.name)
+        self.assertEqual(record1.data, record2.data)
+        self.assertEqual(record1, record2)
+
+    def test_equality4(self):
+        record1 = Record(data=bytes(b'\xDA\x0A\x0B\x01text/plain0Hello World' + bytes(10*b'\x00')))
+        record2 = Record(data=record1.to_bytes())
+
+        self.assertEqual(record1.type, record2.type)
+        self.assertEqual(record1.name, record2.name)
+        self.assertEqual(record1.data, record2.data)
+        self.assertEqual(record1.to_bytes(), record2.to_bytes())
+        self.assertEqual(record1, record2)
+
+    def test_equality5(self):
+        record1 = Record('urn:nfc:wkt:T')
+        record2 = Record(data=record1.to_bytes())
+
+        self.assertEqual(record1.type, record2.type)
+        self.assertEqual(record1.name, record2.name)
+        self.assertEqual(record1.data, record2.data)
+        self.assertEqual(record1.to_bytes(), record2.to_bytes())
+        self.assertEqual(record1, record2)
+
+    def test_equality6(self):
+        record1 = Record('urn:nfc:wkt:T', 'identifier', bytes(b'Hello World'))
+        record2 = Record(data=record1.to_bytes())
+
+        self.assertEqual(record1.type, record2.type)
+        self.assertEqual(record1.name, record2.name)
+        self.assertEqual(record1.data, record2.data)
+        self.assertEqual(record1.to_bytes(), record2.to_bytes())
+        self.assertEqual(record1, record2)
+
+

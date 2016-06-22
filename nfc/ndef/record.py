@@ -302,8 +302,10 @@ class Record(object):
         return ("\n").join([indent + line for line in lines])
 
     def __eq__(self, other):
-        return (isinstance(other, self.__class__)
-            and self.__dict__ == other.__dict__)
+        if isinstance(other, Record):
+            return  self.type == other.type and self.name == other.name and self.data == other.data
+        else:
+            return False
 
     def __ne__(self, other):
         return not self.__eq__(other)
