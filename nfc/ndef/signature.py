@@ -38,7 +38,7 @@ class SignatureRecord(Record):
     Usage:
     >>> record1 = Record(...)
     >>> sig = SignatureRecord(...)
-    >>> message = Message(record1, sig) # First construct the message because the record must know whether is is the first in a message or not.
+    >>> message = Message(record1, sig) # TODO: Take into account that the ME flag of a record must be considered as zero when signing
     >>> sig.sign(record1.to_bytes(), "private_key.pem")
     >>>
     """
@@ -50,7 +50,7 @@ class SignatureRecord(Record):
     _mappings = _ecdsa_mapping # + other mappings
 
     def __init__(self,
-                 version=None, signature=None,
+                 version=0x20, signature=None,
                  certificate_chain=None, as_uri=None, signature_type=None, hash_type=None,
                  data=None):
         """
@@ -100,11 +100,7 @@ class SignatureRecord(Record):
 
     @property
     def data(self):
-        return bytes()
-
-    @data.setter
-    def data(self, value):
-        pass
+        return bytes([self.version]) + self.signature_field + self.certificate_field
 
     @property
     def signature_field(self):
@@ -116,10 +112,13 @@ class SignatureRecord(Record):
         - N octets of Signature / URI"""
         URI_present = 0b10000000 if self.as_uri else 0b00000000
 
-        return bytes([URI_present | self.signature_type.value,
-                      self.hash_type.value,
-                      len(self.signature).to_bytes(2, "big"),
-                      self.signature])
+        if self.signature_type == SignatureType.NoSignaturePresent:
+            return bytes([URI_present | self.signature_type.value])  # If no signature present: don't put the other fields there
+        else:
+            return bytes([URI_present | self.signature_type.value,
+                          self.hash_type.value,
+                          len(self.signature).to_bytes(2, "big"),
+                          self.signature])
 
     @signature_field.setter
     def signature_field(self, data):
@@ -153,3 +152,7 @@ class SignatureRecord(Record):
                 self.signature = data[4:4+length]
             else:
                 raise ValueError("The signature is referenced by URI but SignatureType == 0: No signature present")
+
+    @property
+    def certificate_field(self):
+        return bytes()
