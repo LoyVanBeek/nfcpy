@@ -75,6 +75,8 @@ class SignatureRecord(Record):
         else:
             # Then parse all the data to a signature and have it verified later on
             # TODO
+            self.version = data[0]
+            self.signature_field = data[1:]
 
             pass
 
