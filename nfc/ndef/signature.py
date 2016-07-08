@@ -80,10 +80,25 @@ class SignatureRecord(Record):
 
             pass
 
-    def sign(self, data_to_sign, signing_key_file):
-        """Calculate the signature for the data_to_sign"""
+    def sign(self, data_to_sign, pem_file=None, der_file=None, key_str_curve=None):
+        """
+        Calculate the signature for the data_to_sign
+        :param data_to_sign: bytes of which to calculate a signature
+        :param pem_file: path to .pem file containing a private key
+        :param der_file: path to a DER encoded file containing a private key
+        :param key_str_curve: tuple of a private key and its curve. E.g. (ecdsa.SigningKey.generate(curve=ecdsa.NIST256p), ecdsa.NIST256p)
+        :return:
+        """
         if self.signature_type in self._ecdsa_mapping:
-            sk = ecdsa.SigningKey.from_pem(signing_key_file) #.generate(curve=self._ecdsa_mapping[self.signature_type])
+            if pem_file:
+                sk = ecdsa.SigningKey.from_pem(pem_file) #.generate(curve=self._ecdsa_mapping[self.signature_type])
+            elif der_file:
+                sk = ecdsa.SigningKey.from_der(der_file)
+            elif key_str_curve:
+                sk = ecdsa.SigningKey.from_string(key_str_curve[0], curve=key_str_curve[1])
+            else:
+                raise TypeError("Specify at least a one of pem_file, der_file or key_str")
+
             signature = sk.sign(data_to_sign)
         else:
             raise NotImplementedError("SignatureType {sigtype} not yet implemented. Available types are {available}".format(sigtype=self.signature_type,
@@ -91,11 +106,25 @@ class SignatureRecord(Record):
         self.signature = signature
         return signature
 
-    def verify(self, data_to_verify, verifying_key_file):
-        """Check whether this signature matches with the data to verify"""
+    def verify(self, data_to_verify, pem_file=None, der_file=None, key_str_curve=None):
+        """Check whether this signature matches with the data to verify
+        :param pem_file: path to .pem file containing a public key
+        :param der_file: path to a DER encoded file containing a public key
+        :param key_str_curve: tuple of a public key and its curve. E.g. (ecdsa.SigningKey.generate(curve=ecdsa.NIST256p), ecdsa.NIST256p)
+        """
         if self.signature_type in self._ecdsa_mapping:
-            vk = ecdsa.VerifyingKey.from_pem(verifying_key_file)
-            return vk.verify(self.signature, data_to_verify)
+            if pem_file:
+                vk = ecdsa.VerifyingKey.from_pem(pem_file) #.generate(curve=self._ecdsa_mapping[self.signature_type])
+            elif der_file:
+                vk = ecdsa.VerifyingKey.from_der(der_file)
+            elif key_str_curve:
+                vk = ecdsa.VerifyingKey.from_string(key_str_curve[0], curve=key_str_curve[1])
+            else:
+                raise TypeError("Specify at least a one of pem_file, der_file or key_str")
+            try:
+                return vk.verify(self.signature, data_to_verify)
+            except ecdsa.BadSignatureError:
+                return False
         else:
             raise NotImplementedError("SignatureType {sigtype} not yet implemented. Available types are {available}".format(sigtype=self.signature_type,
                                                                                                                             available=self._mappings))
@@ -158,3 +187,17 @@ class SignatureRecord(Record):
     @property
     def certificate_field(self):
         return bytes()
+
+    def __str__(self):
+        return "SignatureRecord(version={vers}, as_uri={as_uri}, signature_type={sigtype}, signature={signature})".format(
+            vers=self.version,
+            as_uri=self.as_uri,
+            sigtype=self.signature_type,
+            signature=self.signature)
+
+    def __repr__(self):
+        return "SignatureRecord(version={vers}, as_uri={as_uri}, signature_type={sigtype}, signature={signature})".format(
+            vers=self.version,
+            as_uri=self.as_uri,
+            sigtype=self.signature_type,
+            signature=self.signature)

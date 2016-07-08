@@ -1,7 +1,8 @@
 import unittest
 
-import io
+import ecdsa
 from ..signature import SignatureRecord, SignatureType
+from ..record import Record
 
 class TestEmptySignature(unittest.TestCase):
     def setUp(self):
@@ -22,7 +23,35 @@ class TestEmptySignature(unittest.TestCase):
         data = b'\x20' \
                b'\x00'
 
-        import ipdb; ipdb.set_trace()
+        # import ipdb; ipdb.set_trace()
         parsed_sig = SignatureRecord(data=data)
         self.assertEqual(parsed_sig.as_uri, self.sig.as_uri)
         self.assertEqual(parsed_sig.signature_type, self.sig.signature_type)
+
+
+class TestSigningAndVerification(unittest.TestCase):
+    def setUp(self):
+        self.record = Record('urn:nfc:wkt:T', 'identifier', bytes(b'Hello World'))
+        self.record_data = bytes(self.record)
+
+        self.sig = SignatureRecord(as_uri=False, signature_type=SignatureType.ECDSA_DSS_P256)
+
+        self.curve = ecdsa.NIST256p
+        self.signing_key = ecdsa.SigningKey.generate(curve=self.curve)
+        self.verifying_key = self.signing_key.get_verifying_key()
+
+    def testVerificationOk(self):
+        signature = self.sig.sign(self.record_data, key_str_curve=(self.signing_key.to_string(), self.curve))
+
+        verified = self.sig.verify(data_to_verify=self.record_data, key_str_curve=(self.verifying_key.to_string(), self.curve))
+
+        self.assertEqual(verified, True)
+
+    def testVerificationWrong(self):
+        signature = self.sig.sign(self.record_data, key_str_curve=(self.signing_key.to_string(), self.curve))
+
+        tampered_data = bytearray(self.record_data)
+        tampered_data[2] -= 1  # Small modification
+        verified = self.sig.verify(data_to_verify=tampered_data, key_str_curve=(self.verifying_key.to_string(), self.curve))
+
+        self.assertEqual(verified, False)
