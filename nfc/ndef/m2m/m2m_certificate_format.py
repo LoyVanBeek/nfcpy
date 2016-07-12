@@ -157,11 +157,14 @@ class AuthKeyId(univ.Sequence):
     )
 
     @staticmethod
-    def new(keyIdentifier, authCertIssuer, authCertSerialNum):
+    def new(keyIdentifier=None, authCertIssuer=None, authCertSerialNum=None):
         authKeyId = AuthKeyId()
-        authKeyId['keyIdentifier'] = univ.OctetString(value=keyIdentifier).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
-        authKeyId['authCertIssuer'] = authCertIssuer
-        authKeyId['authCertSerialNum'] = univ.OctetString(value=authCertSerialNum).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
+        if keyIdentifier:
+            authKeyId['keyIdentifier'] = univ.OctetString(value=keyIdentifier).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
+        if authCertIssuer:
+            authKeyId['authCertIssuer'] = authCertIssuer
+        if authCertSerialNum:
+            authKeyId['authCertSerialNum'] = univ.OctetString(value=authCertSerialNum).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
 
         return authKeyId
 
