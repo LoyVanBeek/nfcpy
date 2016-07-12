@@ -105,20 +105,6 @@ class GeneralName(univ.Choice):
         namedtype.NamedType('registeredID', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5)))
     )
 
-    # def __init__(self, rfc822Name=None, dNSName=None, directoryName=None, uniformResourceIdentifier=None, iPAddress=None, registeredID=None):
-    #     super(GeneralName, self).__init__()
-    #
-    #     # values = [rfc822Name, dNSName, directoryName, uniformResourceIdentifier, iPAddress, registeredID]
-    #     # if len([value for value in values if value != None]) > 1:
-    #     #     raise ValueError("AttributeValue is a Choice, supply only 1 argument")
-    #
-    #     self['rfc822Name'] = char.IA5String(rfc822Name).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
-    #     self['dNSName'] = char.IA5String(dNSName).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))
-    #     self['directoryName'] = Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
-    #     self['uniformResourceIdentifier'] = char.IA5String(uniformResourceIdentifier).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
-    #     self['iPAddress'] = univ.OctetString(iPAddress).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 16)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))
-    #     self['registeredID'] = univ.ObjectIdentifier(registeredID).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))
-
     @staticmethod
     def new(rfc822Name=None, dNSName=None, directoryName=None, uniformResourceIdentifier=None, iPAddress=None, registeredID=None):
         general_name = GeneralName()
@@ -142,7 +128,7 @@ class AuthKeyId(univ.Sequence):
 
     @staticmethod
     def new(keyIdentifier=None, authCertIssuer=None, authCertSerialNum=None):
-        authKeyId = AuthKeyId()
+        authKeyId = AuthKeyId().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 11))
         if keyIdentifier:
             authKeyId['keyIdentifier'] = univ.OctetString(value=keyIdentifier).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
         if authCertIssuer:
@@ -222,39 +208,44 @@ class TBSCertificate(univ.Sequence):
         tbs = TBSCertificate().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))
         tbs['version'] = univ.Integer(namedValues=namedval.NamedValues(('v1', 0))).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)).subtype(value='v1')
         tbs['serialNumber'] = univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))
-        tbs['cAAlgorithm'] = univ.ObjectIdentifier(cAAlgorithm).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
-        tbs['cAAlgParams'] = univ.OctetString(cAAlgParams).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
-        tbs['issuer'] = issuer.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))
-        tbs['validFrom'] = univ.OctetString(validFrom).subtype(subtypeSpec=constraint.ValueSizeConstraint(4, 5)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))
-        tbs['validDuration'] = univ.OctetString(validDuration).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))
+        if cAAlgorithm: tbs['cAAlgorithm'] = univ.ObjectIdentifier(cAAlgorithm).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
+        if cAAlgParams: tbs['cAAlgParams'] = univ.OctetString(cAAlgParams).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
+        if issuer: tbs['issuer'] = issuer.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))
+        if validFrom: tbs['validFrom'] = univ.OctetString(validFrom).subtype(subtypeSpec=constraint.ValueSizeConstraint(4, 5)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))
+        if validDuration: tbs['validDuration'] = univ.OctetString(validDuration).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))
         tbs['subject'] = subject.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))
-        tbs['pKAlgorithm'] = univ.ObjectIdentifier(pKAlgorithm).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8))
-        tbs['pKAlgParams'] = univ.OctetString(pKAlgParams).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 9))
-        tbs['pubKey'] = univ.OctetString(pubKey).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 10))
-        tbs['authKeyId'] = authKeyId.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 11))
-        tbs['subjKeyId'] = univ.OctetString(subjKeyId).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 12))
-        tbs['keyUsage'] = univ.OctetString(keyUsage).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 1)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 13))
-        tbs['basicConstraints'] = univ.Integer(basicConstraints).subtype(subtypeSpec=constraint.ValueRangeConstraint(0, 7)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 14))
-        tbs['certificatePolicy'] = univ.ObjectIdentifier(certificatePolicy).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 15))
-        tbs['subjectAltName'] = subjectAltName.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 16))
-        tbs['issuerAltName'] = issuerAltName.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 17))
-        tbs['extendedKeyUsage'] = univ.ObjectIdentifier(extendedKeyUsage).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 18))
-        tbs['authInfoAccessOCSP'] = char.IA5String(authInfoAccessOCSP).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 19))
-        tbs['cRLDistribPointURI'] = char.IA5String(cRLDistribPointURI).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 20))
-        tbs['x509extensions'] = x509extensions.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 21))
+        if pKAlgorithm: tbs['pKAlgorithm'] = univ.ObjectIdentifier(pKAlgorithm).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8))
+        if pKAlgParams: tbs['pKAlgParams'] = univ.OctetString(pKAlgParams).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 9))
+        if pubKey: tbs['pubKey'] = univ.OctetString(pubKey).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 10))
+        if authKeyId: tbs['authKeyId'] = authKeyId.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 11))
+        if subjKeyId: tbs['subjKeyId'] = univ.OctetString(subjKeyId).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 12))
+        if keyUsage: tbs['keyUsage'] = univ.OctetString(keyUsage).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 1)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 13))
+        if basicConstraints: tbs['basicConstraints'] = univ.Integer(basicConstraints).subtype(subtypeSpec=constraint.ValueRangeConstraint(0, 7)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 14))
+        if certificatePolicy: tbs['certificatePolicy'] = univ.ObjectIdentifier(certificatePolicy).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 15))
+        if subjectAltName: tbs['subjectAltName'] = subjectAltName.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 16))
+        if issuerAltName: tbs['issuerAltName'] = issuerAltName.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 17))
+        if extendedKeyUsage: tbs['extendedKeyUsage'] = univ.ObjectIdentifier(extendedKeyUsage).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 18))
+        if authInfoAccessOCSP: tbs['authInfoAccessOCSP'] = char.IA5String(authInfoAccessOCSP).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 19))
+        if cRLDistribPointURI: tbs['cRLDistribPointURI'] = char.IA5String(cRLDistribPointURI).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 20))
+        if x509extensions: tbs['x509extensions'] = x509extensions.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 21))
         return tbs
 
 
 
 class Certificate(univ.Sequence):
-    pass
+    tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 20))
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('tbsCertificate', TBSCertificate().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
+        namedtype.NamedType('cACalcValue', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)))
+    )
 
+    @staticmethod
+    def new(tbsCertificate, cACalcValue):
+        certificate = Certificate()
+        certificate['tbsCertificate'] = tbsCertificate
+        certificate['cACalcValue'] = cACalcValue.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))
 
-Certificate.tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 20))
-Certificate.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('tbsCertificate', TBSCertificate().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
-    namedtype.NamedType('cACalcValue', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)))
-)
+        return certificate
 
 if __name__ == '__main__':
     issuer = Name.new(AttributeValue(country='US'),
@@ -275,35 +266,30 @@ if __name__ == '__main__':
         subjectAlternativeName, 
         int(123456789).to_bytes(4, byteorder='big'))
 
-    tbs = TBSCertificate()
-    tbs['version'] = 0
-    # tbs['serialNumber'] = univ.OctetString(value=int(123456789).to_bytes(4, byteorder='big')),
-    # tbs['cAAlgorithm'] = univ.ObjectIdentifier("1.2.3.4"),
-    # tbs['cAAlgParams'] = univ.OctetString(value=bytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
-    # tbs['issuer'] = issuer,
-    # tbs['validFrom'] = univ.OctetString(value=int(123456789).to_bytes(4, byteorder='big')),
-    # tbs['validDuration'] = univ.OctetString(value=int(123456789).to_bytes(4, byteorder='big')),
-    # tbs['subject'] = subject,
-    # tbs['pKAlgorithm'] = univ.ObjectIdentifier("1.2.3.4"),
-    # tbs['pKAlgParams'] = univ.OctetString(value=int(123456789).to_bytes(4, byteorder='big')),
-    # tbs['pubKey'] = univ.OctetString(value=int(123456789).to_bytes(4, byteorder='big')),
-    tbs['authKeyId'] = authkey
-    # tbs['subjKeyId'] = univ.OctetString(value=int(123456789).to_bytes(4, byteorder='big')),
-    # tbs['keyUsage'] = univ.OctetString(value=int(0).to_bytes(1, byteorder='big')),
-    # # tbs['basicConstraints'] = univ. # Omit if end-entity cert
-    # tbs['certificatePolicy'] = univ.ObjectIdentifier("2.5.29.3"),
-    # tbs['subjectAltName'] = subjectAlternativeName,
-    # tbs['issuerAltName'] = issuerAlternativeName,
-    # tbs['extendedKeyUsage'] = univ.ObjectIdentifier("2.5.29.37"),  # Any key purpose
-    # # tbs['authInfoAccessOCSP'] = univ.,
-    # tbs['cRLDistribPointURI'] = char.IA5String(u'www.certificatebegone.com/'),
-    # # tbs['x509extensions'] = ,
+    tbs = TBSCertificate.new(version=0,
+                             serialNumber=int(123456789).to_bytes(4, byteorder='big'),
+                             subject=subject,
+                             cAAlgorithm="1.2.3.4",
+                             cAAlgParams=bytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+                             issuer=issuer,
+                             validFrom=int(123456789).to_bytes(4, byteorder='big'),
+                             validDuration=int(123456789).to_bytes(4, byteorder='big'),
+                             pKAlgorithm="1.2.3.4",
+                             pKAlgParams="1.2.3.4",
+                             pubKey=int(123456789).to_bytes(4, byteorder='big'),
+                             authKeyId=authkey,
+                             subjKeyId=int(123456789).to_bytes(4, byteorder='big'),
+                             keyUsage=int(0).to_bytes(1, byteorder='big'),
+                             certificatePolicy="2.5.29.3",
+                             subjectAltName=subjectAlternativeName,
+                             issuerAltName=issuerAlternativeName,
+                             extendedKeyUsage="2.5.29.37",
+                             cRLDistribPointURI=u'www.certificatebegone.com/'
+                             )
 
-    certificate = Certificate()
-    # certificate['cACalcValue'] = univ.OctetString(value=value=bytes([1,2,3,4]))
-    # certificate['tbsCertificate'] = tbs
+    certificate = Certificate.new(tbs, univ.OctetString(value=bytes([1,2,3,4])))
 
-    # print(certificate.prettyPrint())
+    print(certificate.prettyPrint())
     #
     # from binascii import hexlify
     # print(hexlify(der_encoder.encode(certificate)))
