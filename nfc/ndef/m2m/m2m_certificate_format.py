@@ -170,51 +170,96 @@ class AuthKeyId(univ.Sequence):
 
 
 class Extension(univ.Sequence):
-    pass
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('extnID', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+        namedtype.DefaultedNamedType('criticality', univ.Boolean().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)).subtype(value=0)),
+        namedtype.NamedType('extnValue', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2)))
+    )
 
+    @staticmethod
+    def new(extnID, criticality, extnValue):
+        extension = Extension()
+        extension['extnID'] = univ.ObjectIdentifier(extnID).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
+        extension['criticality'] = univ.Boolean(criticality).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)).subtype(value=0)
+        extension['extnValue'] = univ.OctetString(extnValue).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
 
-Extension.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('extnID', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
-    namedtype.DefaultedNamedType('criticality', univ.Boolean().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)).subtype(value=0)),
-    namedtype.NamedType('extnValue', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2)))
-)
+        return extension
 
 
 class X509Extensions(univ.SequenceOf):
-    pass
+    componentType = Extension()
 
+    @staticmethod
+    def new(*items):
+        x509exts = X509Extensions()
+        for i, item in enumerate(items):
+            x509exts[i] = item
 
-X509Extensions.componentType = Extension()
+        return x509exts
 
 
 class TBSCertificate(univ.Sequence):
-    pass
+    componentType = namedtype.NamedTypes(
+        namedtype.DefaultedNamedType('version', univ.Integer(namedValues=namedval.NamedValues(('v1', 0))).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)).subtype(value='v1')),
+        namedtype.NamedType('serialNumber', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+        namedtype.OptionalNamedType('cAAlgorithm', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
+        namedtype.OptionalNamedType('cAAlgParams', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
+        namedtype.OptionalNamedType('issuer', Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))),
+        namedtype.OptionalNamedType('validFrom', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(4, 5)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))),
+        namedtype.OptionalNamedType('validDuration', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))),
+        namedtype.NamedType('subject', Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))),
+        namedtype.OptionalNamedType('pKAlgorithm', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8))),
+        namedtype.OptionalNamedType('pKAlgParams', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 9))),
+        namedtype.OptionalNamedType('pubKey', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 10))),
+        namedtype.OptionalNamedType('authKeyId', AuthKeyId().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 11))),
+        namedtype.OptionalNamedType('subjKeyId', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 12))),
+        namedtype.OptionalNamedType('keyUsage', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 1)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 13))),
+        namedtype.OptionalNamedType('basicConstraints', univ.Integer().subtype(subtypeSpec=constraint.ValueRangeConstraint(0, 7)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 14))),
+        namedtype.OptionalNamedType('certificatePolicy', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 15))),
+        namedtype.OptionalNamedType('subjectAltName', GeneralName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 16))),
+        namedtype.OptionalNamedType('issuerAltName', GeneralName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 17))),
+        namedtype.OptionalNamedType('extendedKeyUsage', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 18))),
+        namedtype.OptionalNamedType('authInfoAccessOCSP', char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 19))),
+        namedtype.OptionalNamedType('cRLDistribPointURI', char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 20))),
+        namedtype.OptionalNamedType('x509extensions', X509Extensions().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 21)))
+    )
 
+    @staticmethod
+    def new(version, serialNumber, 
+            subject, 
+            cAAlgorithm=None, cAAlgParams=None, 
+            issuer=None, 
+            validFrom=None, validDuration=None, 
+            pKAlgorithm=None, pKAlgParams=None, 
+            pubKey=None, authKeyId=None, subjKeyId=None, keyUsage=None, basicConstraints=None, certificatePolicy=None, 
+            subjectAltName=None, issuerAltName=None, 
+            extendedKeyUsage=None, authInfoAccessOCSP=None, cRLDistribPointURI=None, 
+            x509extensions=None):
+        tbs = TBSCertificate().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))
+        tbs['version'] = univ.Integer(namedValues=namedval.NamedValues(('v1', 0))).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)).subtype(value='v1')
+        tbs['serialNumber'] = univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))
+        tbs['cAAlgorithm'] = univ.ObjectIdentifier(cAAlgorithm).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
+        tbs['cAAlgParams'] = univ.OctetString(cAAlgParams).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
+        tbs['issuer'] = issuer.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))
+        tbs['validFrom'] = univ.OctetString(validFrom).subtype(subtypeSpec=constraint.ValueSizeConstraint(4, 5)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))
+        tbs['validDuration'] = univ.OctetString(validDuration).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))
+        tbs['subject'] = subject.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))
+        tbs['pKAlgorithm'] = univ.ObjectIdentifier(pKAlgorithm).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8))
+        tbs['pKAlgParams'] = univ.OctetString(pKAlgParams).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 9))
+        tbs['pubKey'] = univ.OctetString(pubKey).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 10))
+        tbs['authKeyId'] = authKeyId.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 11))
+        tbs['subjKeyId'] = univ.OctetString(subjKeyId).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 12))
+        tbs['keyUsage'] = univ.OctetString(keyUsage).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 1)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 13))
+        tbs['basicConstraints'] = univ.Integer(basicConstraints).subtype(subtypeSpec=constraint.ValueRangeConstraint(0, 7)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 14))
+        tbs['certificatePolicy'] = univ.ObjectIdentifier(certificatePolicy).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 15))
+        tbs['subjectAltName'] = subjectAltName.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 16))
+        tbs['issuerAltName'] = issuerAltName.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 17))
+        tbs['extendedKeyUsage'] = univ.ObjectIdentifier(extendedKeyUsage).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 18))
+        tbs['authInfoAccessOCSP'] = char.IA5String(authInfoAccessOCSP).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 19))
+        tbs['cRLDistribPointURI'] = char.IA5String(cRLDistribPointURI).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 20))
+        tbs['x509extensions'] = x509extensions.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 21))
+        return tbs
 
-TBSCertificate.componentType = namedtype.NamedTypes(
-    namedtype.DefaultedNamedType('version', univ.Integer(namedValues=namedval.NamedValues(('v1', 0))).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)).subtype(value='v1')),
-    namedtype.NamedType('serialNumber', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
-    namedtype.OptionalNamedType('cAAlgorithm', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
-    namedtype.OptionalNamedType('cAAlgParams', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
-    namedtype.OptionalNamedType('issuer', Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))),
-    namedtype.OptionalNamedType('validFrom', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(4, 5)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))),
-    namedtype.OptionalNamedType('validDuration', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))),
-    namedtype.NamedType('subject', Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))),
-    namedtype.OptionalNamedType('pKAlgorithm', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8))),
-    namedtype.OptionalNamedType('pKAlgParams', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 9))),
-    namedtype.OptionalNamedType('pubKey', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 10))),
-    namedtype.OptionalNamedType('authKeyId', AuthKeyId().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 11))),
-    namedtype.OptionalNamedType('subjKeyId', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 12))),
-    namedtype.OptionalNamedType('keyUsage', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 1)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 13))),
-    namedtype.OptionalNamedType('basicConstraints', univ.Integer().subtype(subtypeSpec=constraint.ValueRangeConstraint(0, 7)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 14))),
-    namedtype.OptionalNamedType('certificatePolicy', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 15))),
-    namedtype.OptionalNamedType('subjectAltName', GeneralName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 16))),
-    namedtype.OptionalNamedType('issuerAltName', GeneralName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 17))),
-    namedtype.OptionalNamedType('extendedKeyUsage', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 18))),
-    namedtype.OptionalNamedType('authInfoAccessOCSP', char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 19))),
-    namedtype.OptionalNamedType('cRLDistribPointURI', char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 20))),
-    namedtype.OptionalNamedType('x509extensions', X509Extensions().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 21)))
-)
 
 
 class Certificate(univ.Sequence):
