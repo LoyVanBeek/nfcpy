@@ -206,8 +206,9 @@ class TBSCertificate(univ.Sequence):
             extendedKeyUsage=None, authInfoAccessOCSP=None, cRLDistribPointURI=None, 
             x509extensions=None):
         tbs = TBSCertificate().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))
-        tbs['version'] = univ.Integer(namedValues=namedval.NamedValues(('v1', 0))).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)).subtype(value='v1')
-        tbs['serialNumber'] = univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))
+
+        tbs['version'] = univ.Integer(value=version, namedValues=namedval.NamedValues(('v1', 0))).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)).subtype(value='v1')
+        tbs['serialNumber'] = univ.OctetString(serialNumber).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))
         if cAAlgorithm: tbs['cAAlgorithm'] = univ.ObjectIdentifier(cAAlgorithm).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
         if cAAlgParams: tbs['cAAlgParams'] = univ.OctetString(cAAlgParams).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
         if issuer: tbs['issuer'] = issuer.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))
