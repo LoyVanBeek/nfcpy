@@ -11,26 +11,26 @@ from binascii import hexlify
 class AttributeValue(univ.Choice):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('country',
-                            char.PrintableString().subtype(subtypeSpec=constraint.ValueSizeConstraint(2, 2)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+                            char.PrintableString().subtype(subtypeSpec=constraint.ValueSizeConstraint(2, 2))),
         namedtype.NamedType('organization',
-                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('organizationalUnit',
-                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
+                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('distinguishedNameQualifier',
-                            char.PrintableString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
+                            char.PrintableString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('stateOrProvince',
-                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))),
+                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4))),
         namedtype.NamedType('locality',
-                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))),
+                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('commonName',
-                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))),
+                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('serialNumber',
-                            char.PrintableString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))),
+                            char.PrintableString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('domainComponent',
-                            char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8))),
-        namedtype.NamedType('registeredId', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 9))),
+                            char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
+        namedtype.NamedType('registeredId', univ.ObjectIdentifier()),
         namedtype.NamedType('octetsName',
-                            univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 8)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 10)))
+                            univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 8)))
     )
 
     def __init__(self, country=None, 
@@ -47,27 +47,27 @@ class AttributeValue(univ.Choice):
             raise ValueError("AttributeValue is a Choice, supply only 1 argument")
 
         if country:
-            self['country'] = char.PrintableString(country).subtype(subtypeSpec=constraint.ValueSizeConstraint(2, 2)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
+            self['country'] = char.PrintableString(country).subtype(subtypeSpec=constraint.ValueSizeConstraint(2, 2))
         if organization:
-            self['organization'] = char.UTF8String(organization).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))
+            self['organization'] = char.UTF8String(organization).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if organizationalUnit:
-            self['organizationalUnit'] = char.UTF8String(organizationalUnit).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
+            self['organizationalUnit'] = char.UTF8String(organizationalUnit).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if distinguishedNameQualifier:
-            self['distinguishedNameQualifier'] = char.PrintableString(distinguishedNameQualifier).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
+            self['distinguishedNameQualifier'] = char.PrintableString(distinguishedNameQualifier).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if stateOrProvince:
-            self['stateOrProvince'] = char.UTF8String(stateOrProvince).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))
+            self['stateOrProvince'] = char.UTF8String(stateOrProvince).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4))
         if locality:
-            self['locality'] = char.UTF8String(locality).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))
+            self['locality'] = char.UTF8String(locality).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if commonName:
-            self['commonName'] = char.UTF8String(commonName).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))
+            self['commonName'] = char.UTF8String(commonName).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if serialNumber:
-            self['serialNumber'] = char.PrintableString(serialNumber).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))
+            self['serialNumber'] = char.PrintableString(serialNumber).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if domainComponent:
-            self['domainComponent'] = char.IA5String(domainComponent).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8))
+            self['domainComponent'] = char.IA5String(domainComponent).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if registeredId:
-            self['registeredId'] = univ.ObjectIdentifier(registeredId).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 9))
+            self['registeredId'] = univ.ObjectIdentifier(registeredId)
         if octetsName:
-            self['octetsName'] = univ.OctetString(octetsName).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 8)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 10))
+            self['octetsName'] = univ.OctetString(octetsName).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 8))
 
     @staticmethod
     def new(*args, **kwargs):
@@ -95,15 +95,15 @@ class Name(univ.SequenceOf):
 class GeneralName(univ.Choice):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('rfc822Name',
-                            char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+                            char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128))),
         namedtype.NamedType('dNSName',
-                            char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+                            char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128))),
         namedtype.NamedType('directoryName', Name()),
         namedtype.NamedType('uniformResourceIdentifier',
-                            char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
+                            char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128))),
         namedtype.NamedType('iPAddress',
-                            univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 16)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))),
-        namedtype.NamedType('registeredID', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5)))
+                            univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 16))),
+        namedtype.NamedType('registeredID', univ.ObjectIdentifier())
     )
 
     @staticmethod
@@ -111,41 +111,41 @@ class GeneralName(univ.Choice):
         general_name = GeneralName()
 
         if rfc822Name:
-            general_name['rfc822Name'] = char.IA5String(rfc822Name).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
+            general_name['rfc822Name'] = char.IA5String(rfc822Name).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128))
         if dNSName:
-            general_name['dNSName'] = char.IA5String(dNSName).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))
+            general_name['dNSName'] = char.IA5String(dNSName).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128))
         if directoryName:
-            general_name['directoryName'] = directoryName # Name(directoryName).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
+            general_name['directoryName'] = directoryName # Name(directoryName)
         if uniformResourceIdentifier:
-            general_name['uniformResourceIdentifier'] = char.IA5String(uniformResourceIdentifier).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
+            general_name['uniformResourceIdentifier'] = char.IA5String(uniformResourceIdentifier).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128))
         if iPAddress:
-            general_name['iPAddress'] = univ.OctetString(iPAddress).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 16)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))
+            general_name['iPAddress'] = univ.OctetString(iPAddress).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 16))
         if registeredID:
-            general_name['registeredID'] = univ.ObjectIdentifier(registeredID).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))
+            general_name['registeredID'] = univ.ObjectIdentifier(registeredID)
 
         return general_name
 
 
 class AuthKeyId(univ.Sequence):
     componentType = namedtype.NamedTypes(
-        namedtype.OptionalNamedType('keyIdentifier', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
-        namedtype.OptionalNamedType('authCertIssuer', GeneralName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))),
-        namedtype.OptionalNamedType('authCertSerialNum', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2)))
+        namedtype.OptionalNamedType('keyIdentifier', univ.OctetString()),
+        namedtype.OptionalNamedType('authCertIssuer', GeneralName()),
+        namedtype.OptionalNamedType('authCertSerialNum', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)))
     )
 
     @staticmethod
     def new(keyIdentifier=None, authCertIssuer=None, authCertSerialNum=None):
-        authKeyId = AuthKeyId().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 11))
+        authKeyId = AuthKeyId()
         if keyIdentifier:
-            octet_string_subtype = univ.OctetString(value=keyIdentifier).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
+            octet_string_subtype = univ.OctetString(value=keyIdentifier)
             # der_encoder.encode(octet_string_subtype)
             authKeyId['keyIdentifier'] = octet_string_subtype
         if authCertIssuer:
-            cert_issuer_subtype = authCertIssuer#.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))
+            cert_issuer_subtype = authCertIssuer#
             der_encoder.encode(cert_issuer_subtype)
             authKeyId['authCertIssuer'] = cert_issuer_subtype
         if authCertSerialNum:
-            octet_string_subtype2 = univ.OctetString(value=authCertSerialNum).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
+            octet_string_subtype2 = univ.OctetString(value=authCertSerialNum).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20))
             # der_encoder.encode(octet_string_subtype2)
             authKeyId['authCertSerialNum'] = octet_string_subtype2
 
@@ -154,17 +154,17 @@ class AuthKeyId(univ.Sequence):
 
 class Extension(univ.Sequence):
     componentType = namedtype.NamedTypes(
-        namedtype.NamedType('extnID', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
-        namedtype.DefaultedNamedType('criticality', univ.Boolean().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)).subtype(value=0)),
-        namedtype.NamedType('extnValue', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2)))
+        namedtype.NamedType('extnID', univ.ObjectIdentifier()),
+        namedtype.DefaultedNamedType('criticality', univ.Boolean().subtype(value=0)),
+        namedtype.NamedType('extnValue', univ.OctetString())
     )
 
     @staticmethod
     def new(extnID, criticality, extnValue):
         extension = Extension()
-        extension['extnID'] = univ.ObjectIdentifier(extnID).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
-        extension['criticality'] = univ.Boolean(criticality).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)).subtype(value=0)
-        extension['extnValue'] = univ.OctetString(extnValue).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
+        extension['extnID'] = univ.ObjectIdentifier(extnID)
+        extension['criticality'] = univ.Boolean(criticality).subtype(value=0)
+        extension['extnValue'] = univ.OctetString(extnValue)
 
         return extension
 
@@ -183,28 +183,28 @@ class X509Extensions(univ.SequenceOf):
 
 class TBSCertificate(univ.Sequence):
     componentType = namedtype.NamedTypes(
-        namedtype.DefaultedNamedType('version', univ.Integer(namedValues=namedval.NamedValues(('v1', 0))).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)).subtype(value='v1')),
-        namedtype.NamedType('serialNumber', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
-        namedtype.OptionalNamedType('cAAlgorithm', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
-        namedtype.OptionalNamedType('cAAlgParams', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
-        namedtype.OptionalNamedType('issuer', Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))),
-        namedtype.OptionalNamedType('validFrom', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(4, 5)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))),
-        namedtype.OptionalNamedType('validDuration', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))),
-        namedtype.NamedType('subject', Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))),
-        namedtype.OptionalNamedType('pKAlgorithm', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8))),
-        namedtype.OptionalNamedType('pKAlgParams', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 9))),
-        namedtype.OptionalNamedType('pubKey', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 10))),
-        namedtype.OptionalNamedType('authKeyId', AuthKeyId().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 11))),
-        namedtype.OptionalNamedType('subjKeyId', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 12))),
-        namedtype.OptionalNamedType('keyUsage', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 1)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 13))),
-        namedtype.OptionalNamedType('basicConstraints', univ.Integer().subtype(subtypeSpec=constraint.ValueRangeConstraint(0, 7)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 14))),
-        namedtype.OptionalNamedType('certificatePolicy', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 15))),
-        namedtype.OptionalNamedType('subjectAltName', GeneralName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 16))),
-        namedtype.OptionalNamedType('issuerAltName', GeneralName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 17))),
-        namedtype.OptionalNamedType('extendedKeyUsage', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 18))),
-        namedtype.OptionalNamedType('authInfoAccessOCSP', char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 19))),
-        namedtype.OptionalNamedType('cRLDistribPointURI', char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 20))),
-        namedtype.OptionalNamedType('x509extensions', X509Extensions().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 21)))
+        namedtype.DefaultedNamedType('version', univ.Integer(namedValues=namedval.NamedValues(('v1', 0))).subtype(value='v1')),
+        namedtype.NamedType('serialNumber', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20))),
+        namedtype.OptionalNamedType('cAAlgorithm', univ.ObjectIdentifier()),
+        namedtype.OptionalNamedType('cAAlgParams', univ.OctetString()),
+        namedtype.OptionalNamedType('issuer', Name()),
+        namedtype.OptionalNamedType('validFrom', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(4, 5))),
+        namedtype.OptionalNamedType('validDuration', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4))),
+        namedtype.NamedType('subject', Name()),
+        namedtype.OptionalNamedType('pKAlgorithm', univ.ObjectIdentifier()),
+        namedtype.OptionalNamedType('pKAlgParams', univ.OctetString()),
+        namedtype.OptionalNamedType('pubKey', univ.OctetString()),
+        namedtype.OptionalNamedType('authKeyId', AuthKeyId()),
+        namedtype.OptionalNamedType('subjKeyId', univ.OctetString()),
+        namedtype.OptionalNamedType('keyUsage', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 1))),
+        namedtype.OptionalNamedType('basicConstraints', univ.Integer().subtype(subtypeSpec=constraint.ValueRangeConstraint(0, 7))),
+        namedtype.OptionalNamedType('certificatePolicy', univ.ObjectIdentifier()),
+        namedtype.OptionalNamedType('subjectAltName', GeneralName()),
+        namedtype.OptionalNamedType('issuerAltName', GeneralName()),
+        namedtype.OptionalNamedType('extendedKeyUsage', univ.ObjectIdentifier()),
+        namedtype.OptionalNamedType('authInfoAccessOCSP', char.IA5String()),
+        namedtype.OptionalNamedType('cRLDistribPointURI', char.IA5String()),
+        namedtype.OptionalNamedType('x509extensions', X509Extensions())
     )
 
     @staticmethod
@@ -218,30 +218,30 @@ class TBSCertificate(univ.Sequence):
             subjectAltName=None, issuerAltName=None, 
             extendedKeyUsage=None, authInfoAccessOCSP=None, cRLDistribPointURI=None, 
             x509extensions=None):
-        tbs = TBSCertificate().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))
+        tbs = TBSCertificate()
 
-        tbs['version'] = univ.Integer(value=version, namedValues=namedval.NamedValues(('v1', 0))).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)).subtype(value='v1')
-        tbs['serialNumber'] = univ.OctetString(serialNumber).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))
-        if cAAlgorithm: tbs['cAAlgorithm'] = univ.ObjectIdentifier(cAAlgorithm).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
-        if cAAlgParams: tbs['cAAlgParams'] = univ.OctetString(cAAlgParams).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
-        if issuer: tbs['issuer'] = issuer.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))
-        if validFrom: tbs['validFrom'] = univ.OctetString(validFrom).subtype(subtypeSpec=constraint.ValueSizeConstraint(4, 5)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))
-        if validDuration: tbs['validDuration'] = univ.OctetString(validDuration).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))
-        tbs['subject'] = subject.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 7))
-        if pKAlgorithm: tbs['pKAlgorithm'] = univ.ObjectIdentifier(pKAlgorithm).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8))
-        if pKAlgParams: tbs['pKAlgParams'] = univ.OctetString(pKAlgParams).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 9))
-        if pubKey: tbs['pubKey'] = univ.OctetString(pubKey).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 10))
-        if authKeyId: tbs['authKeyId'] = authKeyId.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 11))
-        if subjKeyId: tbs['subjKeyId'] = univ.OctetString(subjKeyId).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 12))
-        if keyUsage: tbs['keyUsage'] = univ.OctetString(keyUsage).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 1)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 13))
-        if basicConstraints: tbs['basicConstraints'] = univ.Integer(basicConstraints).subtype(subtypeSpec=constraint.ValueRangeConstraint(0, 7)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 14))
-        if certificatePolicy: tbs['certificatePolicy'] = univ.ObjectIdentifier(certificatePolicy).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 15))
-        if subjectAltName: tbs['subjectAltName'] = subjectAltName.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 16))
-        if issuerAltName: tbs['issuerAltName'] = issuerAltName.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 17))
-        if extendedKeyUsage: tbs['extendedKeyUsage'] = univ.ObjectIdentifier(extendedKeyUsage).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 18))
-        if authInfoAccessOCSP: tbs['authInfoAccessOCSP'] = char.IA5String(authInfoAccessOCSP).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 19))
-        if cRLDistribPointURI: tbs['cRLDistribPointURI'] = char.IA5String(cRLDistribPointURI).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 20))
-        if x509extensions: tbs['x509extensions'] = x509extensions.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 21))
+        tbs['version'] = univ.Integer(value=version, namedValues=namedval.NamedValues(('v1', 0))).subtype(value='v1')
+        tbs['serialNumber'] = univ.OctetString(serialNumber).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20))
+        if cAAlgorithm: tbs['cAAlgorithm'] = univ.ObjectIdentifier(cAAlgorithm)
+        if cAAlgParams: tbs['cAAlgParams'] = univ.OctetString(cAAlgParams)
+        if issuer: tbs['issuer'] = issuer
+        if validFrom: tbs['validFrom'] = univ.OctetString(validFrom).subtype(subtypeSpec=constraint.ValueSizeConstraint(4, 5))
+        if validDuration: tbs['validDuration'] = univ.OctetString(validDuration).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4))
+        tbs['subject'] = subject
+        if pKAlgorithm: tbs['pKAlgorithm'] = univ.ObjectIdentifier(pKAlgorithm)
+        if pKAlgParams: tbs['pKAlgParams'] = univ.OctetString(pKAlgParams)
+        if pubKey: tbs['pubKey'] = univ.OctetString(pubKey)
+        if authKeyId: tbs['authKeyId'] = authKeyId
+        if subjKeyId: tbs['subjKeyId'] = univ.OctetString(subjKeyId)
+        if keyUsage: tbs['keyUsage'] = univ.OctetString(keyUsage).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 1))
+        if basicConstraints: tbs['basicConstraints'] = univ.Integer(basicConstraints).subtype(subtypeSpec=constraint.ValueRangeConstraint(0, 7))
+        if certificatePolicy: tbs['certificatePolicy'] = univ.ObjectIdentifier(certificatePolicy)
+        if subjectAltName: tbs['subjectAltName'] = subjectAltName
+        if issuerAltName: tbs['issuerAltName'] = issuerAltName
+        if extendedKeyUsage: tbs['extendedKeyUsage'] = univ.ObjectIdentifier(extendedKeyUsage)
+        if authInfoAccessOCSP: tbs['authInfoAccessOCSP'] = char.IA5String(authInfoAccessOCSP)
+        if cRLDistribPointURI: tbs['cRLDistribPointURI'] = char.IA5String(cRLDistribPointURI)
+        if x509extensions: tbs['x509extensions'] = x509extensions
         return tbs
 
 
@@ -249,15 +249,15 @@ class TBSCertificate(univ.Sequence):
 class Certificate(univ.Sequence):
     tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 20))
     componentType = namedtype.NamedTypes(
-        namedtype.NamedType('tbsCertificate', TBSCertificate().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))),
-        namedtype.NamedType('cACalcValue', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)))
+        namedtype.NamedType('tbsCertificate', TBSCertificate()),
+        namedtype.NamedType('cACalcValue', univ.OctetString())
     )
 
     @staticmethod
     def new(tbsCertificate, cACalcValue):
         certificate = Certificate()
         certificate['tbsCertificate'] = tbsCertificate
-        certificate['cACalcValue'] = cACalcValue.subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))
+        certificate['cACalcValue'] = cACalcValue
 
         return certificate
 
