@@ -150,14 +150,20 @@ class GeneralName(univ.Choice):
 
 
 class AuthKeyId(univ.Sequence):
-    pass
+    componentType = namedtype.NamedTypes(
+        namedtype.OptionalNamedType('keyIdentifier', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+        namedtype.OptionalNamedType('authCertIssuer', GeneralName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))),
+        namedtype.OptionalNamedType('authCertSerialNum', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2)))
+    )
 
+    @staticmethod
+    def new(keyIdentifier, authCertIssuer, authCertSerialNum):
+        authKeyId = AuthKeyId()
+        authKeyId['keyIdentifier'] = univ.OctetString(value=keyIdentifier).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
+        authKeyId['authCertIssuer'] = authCertIssuer
+        authKeyId['authCertSerialNum'] = univ.OctetString(value=authCertSerialNum).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
 
-AuthKeyId.componentType = namedtype.NamedTypes(
-    namedtype.OptionalNamedType('keyIdentifier', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
-    namedtype.OptionalNamedType('authCertIssuer', GeneralName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))),
-    namedtype.OptionalNamedType('authCertSerialNum', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20)).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2)))
-)
+        return authKeyId
 
 
 class Extension(univ.Sequence):
