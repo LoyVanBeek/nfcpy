@@ -268,7 +268,7 @@ if __name__ == '__main__':
                       AttributeValue(serialNumber='987654321'))
     der_encoder.encode(issuer)
 
-    issuerAlternativeName = GeneralName.new(directoryName=issuer)
+    issuerAlternativeName = GeneralName.new(uniformResourceIdentifier="blabla.com")
     der_encoder.encode(issuerAlternativeName)
 
     subject = Name.new(AttributeValue(country='US'),
@@ -277,8 +277,8 @@ if __name__ == '__main__':
                        AttributeValue(serialNumber='123456789'))
     der_encoder.encode(subject)
 
-    subjectAlternativeName = GeneralName.new(directoryName=subject)
-    # print(subjectAlternativeName.prettyPrint())
+    subjectAlternativeName = GeneralName.new(uniformResourceIdentifier="blabla.com")
+    print(subjectAlternativeName.prettyPrint())
     der_encoder.encode(subjectAlternativeName)
 
     authkey = AuthKeyId.new(keyIdentifier=int(123456789).to_bytes(4, byteorder='big'),
