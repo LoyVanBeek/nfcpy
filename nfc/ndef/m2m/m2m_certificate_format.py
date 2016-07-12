@@ -261,6 +261,8 @@ class Certificate(univ.Sequence):
 
         return certificate
 
+#TODO: implement ECDSA-Signature, ECDSA-Sig-Value, ECDSA-Full-R, RSA-Signature and RSAPublicKey
+
 if __name__ == '__main__':
     issuer = Name.new(AttributeValue(country='US'),
                       AttributeValue(organization='Big CAhuna burger'),
@@ -282,7 +284,7 @@ if __name__ == '__main__':
     der_encoder.encode(subjectAlternativeName)
 
     authkey = AuthKeyId.new(keyIdentifier=int(123456789).to_bytes(4, byteorder='big'),
-                            #authCertIssuer=subjectAlternativeName,
+                            authCertIssuer=subjectAlternativeName,
                             authCertSerialNum=int(123456789).to_bytes(4, byteorder='big'))
     print(authkey.prettyPrint())
     # import pudb; pudb.set_trace()
@@ -301,12 +303,12 @@ if __name__ == '__main__':
                              pKAlgorithm="1.2.3.4",
                              pKAlgParams="1.2.3.4",
                              pubKey=int(123456789).to_bytes(4, byteorder='big'),
-                             # authKeyId=authkey,
+                             authKeyId=authkey,
                              subjKeyId=int(123456789).to_bytes(4, byteorder='big'),
                              keyUsage=int(0).to_bytes(1, byteorder='big'),
                              certificatePolicy="2.5.29.3",
-                             # subjectAltName=subjectAlternativeName,
-                             # issuerAltName=issuerAlternativeName,
+                             subjectAltName=subjectAlternativeName,
+                             issuerAltName=issuerAlternativeName,
                              extendedKeyUsage="2.5.29.37",
                              cRLDistribPointURI=u'www.certificatebegone.com/'
                              )
