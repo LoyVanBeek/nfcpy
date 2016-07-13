@@ -21,7 +21,7 @@ http://www.secg.org/SEC1-Ver-1.0.pdf"""
 
 from pyasn1.type import univ, char, namedtype, namedval, tag, constraint, useful
 from pyasn1.codec.der import encoder as der_encoder
-from binascii import hexlify
+import binascii
 import enum
 
 
@@ -461,7 +461,7 @@ if __name__ == '__main__':
     # For this test, we will simply use a public and private key, separate from a certificate.
     # The message we will be signing is "hello world".encode("ascii"), which is b'hello world' in Python
     #
-    # For NDEF signatures, the only available hash type is SHA256.
+    # For NDEF signatures, the only available hash type for signatures is SHA256.
     # We create a private key using
     # $ openssl ecparam -genkey -name prime256v1 -out private.pem
     # prime256v1 corresponds to AlgorithmObjectIdentifiers.ecdsa_with_sha256_secp256r1
@@ -485,19 +485,34 @@ if __name__ == '__main__':
     # la/50oJSDw5nKZm9zqeUIxwpl215Gz+aeBJOEHEC06fHjnb3TNdQcu1aKg==
     # -----END PUBLIC KEY-----
     #
+    #
+    # Signing a message:
     # To then sign the message, we take the sha256 hash of it and then calculate the signature over the hash:
     # Write the message to a file message.txt, then
-    # $ openssl dgst -sha256 -sign private.pem message.txt > signature.bin
+    # $ openssl dgst -sha256 -sign private.pem -out signature.der message.txt
     #
     # To verify, we take the sha256 of the message and that the signature matches with that hash & the public key
-    # $ openssl dgst -sha256 -verify public.pem -signature signature.bin message.txt
+    # $ openssl dgst -sha256 -verify public.pem -signature signature.der message.txt
+    # The content of signature.bin then is already DER encoded and contains 2 integers
+    #   (http://davidederosa.com/basic-blockchain-programming/elliptic-curve-digital-signatures/ and
+    #   verified with https://lapo.it/asn1js/#30450220362442B5E0293651BCD53E1F0E68145B17E323BD5BF09ECF49F307C82E44A0EF02210083DB95FE17C5C58B7DCD377972508645B3C49ECB9A42808573761982E76FAAFA)
+    # This matches the specification of ECDSA-Signature with the ECDSA-Sig-Value option.
 
 
-    cACalcValue = univ.OctetString(value=bytes([1,2,3,4]))
+    with open('signature.der', 'rb') as signature_file:
+        signature_der = signature_file.readall()
+    # This should contain the CA's signature of the certificate,
+    # but for this self-signed certificate we take the signature of the message.
+    # This is incorrect in itself, but is OK to check the encoding etc.
+    #
+    # TODO: The description above it for signatures of the message, but first we need the signature of the self *sign*ed certificate
+    # Generate a certificate and sign that with the priv or pubkey of that certificate. *That* signature should go below!
+    # The signature is calculated over the TBSCertificate, DER encoded.
+    cACalcValue = univ.OctetString(value=signature_der)
     der_encoder.encode(cACalcValue)
 
     certificate = Certificate.new(tbs, cACalcValue)
 
     print(certificate.prettyPrint())
-    print(hexlify(der_encoder.encode(certificate)))
+    print(binascii.hexlify(der_encoder.encode(certificate)))
     print(len(der_encoder.encode(certificate)))
