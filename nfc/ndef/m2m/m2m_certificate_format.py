@@ -385,7 +385,7 @@ class AlgorithmObjectIdentifiers(enum.Enum):
 def generate_signature():
     from ecdsa import SigningKey, NIST256p  # using https://pypi.python.org/pypi/ecdsa/
 
-    sk = SigningKey.generate(curve=NIST256p)
+    sk = SigningKey.generate(curve=NIST256p) #This curve == secp256r1
     vk = sk.get_verifying_key()
     signature = sk.sign("message".encode("ascii"))
     # assert vk.verify(signature, "message".encode("ascii"))
@@ -444,6 +444,53 @@ if __name__ == '__main__':
                              cRLDistribPointURI=u'www.certificatebegone.com/'
                              )
     der_encoder.encode(tbs)
+
+    # How do signatures and the whole Public Key Infrastructure work? https://en.wikipedia.org/wiki/Public_key_certificate
+    #
+    # A Certificate Authority (the issuer) gives us (the subject) a certificate.
+    # The CA signs the certificate with their private key. *Their* signature and *our* public key are included in *our* certificate.
+    # Anyone can see the certificate with the signature and the public key and verify that those are valid.
+    # In an NDEF Signature Record, the certificate is included within the Signature Record, or at least a reference to it.
+    #
+    # We take this certificate, have our own private key (paired with the public key in the certificate) and can make signatures using that private key.
+    # To sign a message, we use a signing algorithm that uses the message and our private key. The signature will be sent along with the message.
+    #
+    # The public key (in the certificate) can be used to verify the signature:
+    #   the combination of the message (signed data), the signature and the public key can only be valid if it was signed with our private key.
+    #
+    # For this test, we will simply use a public and private key, separate from a certificate.
+    # The message we will be signing is "hello world".encode("ascii"), which is b'hello world' in Python
+    #
+    # For NDEF signatures, the only available hash type is SHA256.
+    # We create a private key using
+    # $ openssl ecparam -genkey -name prime256v1 -out private.pem
+    # prime256v1 corresponds to AlgorithmObjectIdentifiers.ecdsa_with_sha256_secp256r1
+    # and Signature Type / Hash Type ECDSA [DSS] P256 (I think)
+    #
+    # private.pem then contains:
+    # -----BEGIN EC PARAMETERS-----
+    # BggqhkjOPQMBBw==
+    # -----END EC PARAMETERS-----
+    # -----BEGIN EC PRIVATE KEY-----
+    # MHcCAQEEIAMRJK6SAovUhcPFmmFxLLW4D1wTTXEqUFmMxYk5DfxdoAoGCCqGSM49
+    # AwEHoUQDQgAEyCjVqzDqCn5KS2QYmD6bCajY1L8+la/50oJSDw5nKZm9zqeUIxwp
+    # l215Gz+aeBJOEHEC06fHjnb3TNdQcu1aKg==
+    # -----END EC PRIVATE KEY-----
+    #
+    # To get the public key matching the private key:
+    # $ openssl ec -in private.pem -pubout -out public.pem
+    # public.pem then contains:
+    # -----BEGIN PUBLIC KEY-----
+    # MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyCjVqzDqCn5KS2QYmD6bCajY1L8+
+    # la/50oJSDw5nKZm9zqeUIxwpl215Gz+aeBJOEHEC06fHjnb3TNdQcu1aKg==
+    # -----END PUBLIC KEY-----
+    #
+    # To then sign the message, we take the sha256 hash of it and then calculate the signature over the hash:
+    # Write the message to a file message.txt, then
+    # $ openssl dgst -sha256 -sign private.pem message.txt > signature.bin
+    #
+    # To verify, we take the sha256 of the message and that the signature matches with that hash & the public key
+    # $ openssl dgst -sha256 -verify public.pem -signature signature.bin message.txt
 
 
     cACalcValue = univ.OctetString(value=bytes([1,2,3,4]))
