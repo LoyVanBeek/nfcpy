@@ -22,6 +22,7 @@ http://www.secg.org/SEC1-Ver-1.0.pdf"""
 from pyasn1.type import univ, char, namedtype, namedval, tag, constraint, useful
 from pyasn1.codec.der import encoder as der_encoder
 from binascii import hexlify
+import enum
 
 
 class AttributeValue(univ.Choice):
@@ -366,6 +367,33 @@ class RSAPublicKey(univ.Sequence):
 
         return pubkey
 
+
+class AlgorithmObjectIdentifiers(enum.Enum):
+    ecdsa_with_sha256_secp192r1     = univ.ObjectIdentifier("2.16.840.1.114513.1.0")
+    ecdsa_with_sha256_secp224r1     = univ.ObjectIdentifier("2.16.840.1.114513.1.1")
+    ecdsa_with_sha256_sect233k1     = univ.ObjectIdentifier("2.16.840.1.114513.1.2")
+    ecdsa_with_sha256_sect233r1     = univ.ObjectIdentifier("2.16.840.1.114513.1.3")
+    ecqv_with_sha256_secp192r1      = univ.ObjectIdentifier("2.16.840.1.114513.1.4")
+    ecqv_with_sha256_secp224r1      = univ.ObjectIdentifier("2.16.840.1.114513.1.5")
+    ecqv_with_sha256_sect233k1      = univ.ObjectIdentifier("2.16.840.1.114513.1.6")
+    ecqv_with_sha256_sect233r1      = univ.ObjectIdentifier("2.16.840.1.114513.1.7")
+    rsa_with_sha256                 = univ.ObjectIdentifier("2.16.840.1.114513.1.8")
+    ecdsa_with_sha256_secp256r1     = univ.ObjectIdentifier("2.16.840.1.114513.1.9")
+    ecqv_with_sha256_secp256r1      = univ.ObjectIdentifier("2.16.840.1.114513.1.10")
+
+
+def generate_signature():
+    from ecdsa import SigningKey, NIST256p  # using https://pypi.python.org/pypi/ecdsa/
+
+    sk = SigningKey.generate(curve=NIST256p)
+    vk = sk.get_verifying_key()
+    signature = sk.sign("message".encode("ascii"))
+    # assert vk.verify(signature, "message".encode("ascii"))
+
+    pubkey = vk.to_string()
+
+    return pubkey, signature
+
 if __name__ == '__main__':
     issuer = Name.new(AttributeValue(country='US'),
                       AttributeValue(organization='Big CAhuna burger'),
@@ -416,6 +444,7 @@ if __name__ == '__main__':
                              cRLDistribPointURI=u'www.certificatebegone.com/'
                              )
     der_encoder.encode(tbs)
+
 
     cACalcValue = univ.OctetString(value=bytes([1,2,3,4]))
     der_encoder.encode(cACalcValue)
