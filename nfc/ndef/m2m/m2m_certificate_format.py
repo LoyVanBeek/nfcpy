@@ -23,6 +23,7 @@ from pyasn1.type import univ, char, namedtype, namedval, tag, constraint, useful
 from pyasn1.codec.der import encoder as der_encoder
 import binascii
 import enum
+import base64
 
 
 class AttributeValue(univ.Choice):
@@ -406,8 +407,8 @@ if __name__ == '__main__':
 
     subject = Name.new(AttributeValue(country='US'),
                        AttributeValue(organization='ACME corp.'),
-                       AttributeValue(stateOrProvince='Utah'),
-                       AttributeValue(serialNumber='123456789'))
+                       #AttributeValue(stateOrProvince='New Jersey'),
+                       AttributeValue(locality='Fairfield'))
     der_encoder.encode(subject)
 
     subjectAlternativeName = GeneralName.new(uniformResourceIdentifier="blabla.com")
@@ -422,28 +423,6 @@ if __name__ == '__main__':
     # break /usr/local/lib/python3.5/dist-packages/pyasn1/type/univ.py:1124
     # break /usr/local/lib/python3.5/dist-packages/pyasn1/codec/ber/encoder.py:324
     der_encoder.encode(authkey)
-
-    tbs = TBSCertificate.new(version=0,
-                             serialNumber=int(123456789).to_bytes(4, byteorder='big'),
-                             subject=subject,
-                             cAAlgorithm="1.2.3.4",
-                             cAAlgParams=bytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
-                             issuer=issuer,
-                             validFrom=int(123456789).to_bytes(4, byteorder='big'),
-                             validDuration=int(123456789).to_bytes(4, byteorder='big'),
-                             pKAlgorithm="1.2.3.4",
-                             pKAlgParams="1.2.3.4",
-                             pubKey=int(123456789).to_bytes(4, byteorder='big'),
-                             authKeyId=authkey,
-                             subjKeyId=int(123456789).to_bytes(4, byteorder='big'),
-                             keyUsage=int(0).to_bytes(1, byteorder='big'),
-                             certificatePolicy="2.5.29.3",
-                             subjectAltName=subjectAlternativeName,
-                             issuerAltName=issuerAlternativeName,
-                             extendedKeyUsage="2.5.29.37",
-                             cRLDistribPointURI=u'www.certificatebegone.com/'
-                             )
-    der_encoder.encode(tbs)
 
     # How do signatures and the whole Public Key Infrastructure work? https://en.wikipedia.org/wiki/Public_key_certificate
     #
@@ -498,16 +477,43 @@ if __name__ == '__main__':
     #   verified with https://lapo.it/asn1js/#30450220362442B5E0293651BCD53E1F0E68145B17E323BD5BF09ECF49F307C82E44A0EF02210083DB95FE17C5C58B7DCD377972508645B3C49ECB9A42808573761982E76FAAFA)
     # This matches the specification of ECDSA-Signature with the ECDSA-Sig-Value option.
 
-
-    with open('signature.der', 'rb') as signature_file:
-        signature_der = signature_file.readall()
-    # This should contain the CA's signature of the certificate,
-    # but for this self-signed certificate we take the signature of the message.
-    # This is incorrect in itself, but is OK to check the encoding etc.
-    #
-    # TODO: The description above it for signatures of the message, but first we need the signature of the self *sign*ed certificate
-    # Generate a certificate and sign that with the priv or pubkey of that certificate. *That* signature should go below!
+    # cACalcValue must contain the CA's (but for now our own) signature over the certificate.
+    # To do this:
+    # Generate a certificate and sign that with the private key (which happens to be of that same certificate)
+    # $ openssl req -new -key private.pem -out unsigned_cert.csr -subj '/C=US/ST=New Jersey/L=Fairfield/CN=www.acme.com/'
+    # $ openssl dgst -sha256 -sign private.pem -out certificate_signature.der unsigned_cert.csr
+    # *That* signature should go below!
     # The signature is calculated over the TBSCertificate, DER encoded.
+
+    # The certificate, manually parsed into this form:
+    tbs = TBSCertificate.new(version=0,
+                             serialNumber=int(123456789).to_bytes(20, byteorder='big'),
+                             subject=subject,
+                             cAAlgorithm="1.2.840.10045.4.3.2",
+                             # ecdsaWithSha256: http://oid-info.com/get/1.2.840.10045.4.3.2
+                             cAAlgParams=base64.decodebytes(b'BggqhkjOPQMBBw=='),
+                             # Parameters for the elliptic curve: http://oid-info.com/get/1.2.840.10045.3.1.7
+                             issuer=subject,  # This is a self-signed certificate
+                             # validFrom=int(123456789).to_bytes(4, byteorder='big'), # seconds since epoch, optional
+                             # validDuration=int(123456789).to_bytes(4, byteorder='big'),  # seconds since validFrom, optional
+                             pKAlgorithm="1.2.840.10045.4.3.2",  # Same as cAAlgorithm
+                             # pKAlgParams="1.2.3.4", #Optional
+                             pubKey=base64.decodebytes(b'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyCjVqzDqCn5KS2QYmD6bCajY1L8+\nla/50oJSDw5nKZm9zqeUIxwpl215Gz+aeBJOEHEC06fHjnb3TNdQcu1aKg=='),
+                             # authKeyId=authkey, optional, See https://tools.ietf.org/html/rfc5280#section-4.2.1.1 for explanation
+                             subjKeyId=int(1).to_bytes(1, byteorder='big'),  # Key ID of the subject (us)
+                             keyUsage=0b10100000.to_bytes(1, byteorder='big'),
+                             # See https://tools.ietf.org/html/rfc5280#section-4.2.1.3
+                             certificatePolicy="2.5.29.32.0",  # Anypolicy: http://www.oid-info.com/get/2.5.29.32.0
+                             # subjectAltName=subjectAlternativeName, #optional
+                             # issuerAltName=issuerAlternativeName, #Optional
+                             # extendedKeyUsage="2.16.840.1.114513.29.37", # Optional. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
+                             # cRLDistribPointURI=u'www.certificatebegone.com/' # Optional
+                             )
+    # der_encoder.encode(tbs)
+
+    with open('certificate_signature.der', 'rb') as signature_file:
+        signature_der = signature_file.read()
+
     cACalcValue = univ.OctetString(value=signature_der)
     der_encoder.encode(cACalcValue)
 
