@@ -480,8 +480,8 @@ if __name__ == '__main__':
     # cACalcValue must contain the CA's (but for now our own) signature over the certificate.
     # To do this:
     # Generate a certificate and sign that with the private key (which happens to be of that same certificate)
-    # $ openssl req -new -key private.pem -out unsigned_cert.csr -subj '/C=US/ST=New Jersey/L=Fairfield/CN=www.acme.com/'
-    # $ openssl dgst -sha256 -sign private.pem -out certificate_signature.der unsigned_cert.csr
+    # $ openssl req -new -key private.pem -out to_be_signed_certificate.csr -subj '/C=US/ST=New Jersey/L=Fairfield/CN=www.acme.com/'
+    # $ openssl dgst -sha256 -sign private.pem -out certificate_signature.der to_be_signed_certificate.csr
     # *That* signature should go below!
     # The signature is calculated over the TBSCertificate, DER encoded.
 
