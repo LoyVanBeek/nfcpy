@@ -24,6 +24,7 @@ from pyasn1.codec.der import encoder as der_encoder
 import binascii
 import enum
 import base64
+import subprocess
 
 
 class AttributeValue(univ.Choice):
@@ -383,17 +384,37 @@ class AlgorithmObjectIdentifiers(enum.Enum):
     ecqv_with_sha256_secp256r1      = univ.ObjectIdentifier("2.16.840.1.114513.1.10")
 
 
-def generate_signature():
-    from ecdsa import SigningKey, NIST256p  # using https://pypi.python.org/pypi/ecdsa/
+def generate_signature(to_be_signed_bytes, private_key_file='private.pem'):
+    """openssl dgst -sha256 -sign private.pem -out signature.der message.txt"""
+    byte_path = "/tmp/to_be_signed.tmp"
+    with open(byte_path, 'wb') as byte_file:
+        byte_file.write(to_be_signed_bytes)
 
-    sk = SigningKey.generate(curve=NIST256p) #This curve == secp256r1
-    vk = sk.get_verifying_key()
-    signature = sk.sign("message".encode("ascii"))
-    # assert vk.verify(signature, "message".encode("ascii"))
+    signature_path = "/tmp/signature.der"
+    proc = subprocess.Popen(['openssl', 'dgst', '-sha256', '-sign', private_key_file, '-out', signature_path,  byte_path],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = proc.communicate()
 
-    pubkey = vk.to_string()
+    with open(signature_path, 'rb') as signature_file:
+        signature = signature_file.read()
+        return signature
 
-    return pubkey, signature
+def verify_signature(signed_bytes, signature, public_key_file='public.pem'):
+    """openssl dgst -sha256 -verify public.pem -signature signature.der message.txt"""
+    byte_path = "/tmp/signed.tmp"
+    with open(byte_path, 'wb') as byte_file:
+        byte_file.write(signed_bytes)
+
+    signature_path = "/tmp/signature.der"
+    with open(signature_path, 'wb') as signature_file:
+        signature_file.write(signature)
+
+    proc = subprocess.Popen(['openssl', 'dgst', '-sha256', '-verify', public_key_file, '-signature', signature_path, byte_path],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = proc.communicate()
+
+    return out.strip() == b"Verified OK"
+
 
 if __name__ == '__main__':
     issuer = Name.new(AttributeValue(country='US'),
