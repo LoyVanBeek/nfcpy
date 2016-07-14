@@ -383,6 +383,29 @@ class AlgorithmObjectIdentifiers(enum.Enum):
     ecdsa_with_sha256_secp256r1     = univ.ObjectIdentifier("2.16.840.1.114513.1.9")
     ecqv_with_sha256_secp256r1      = univ.ObjectIdentifier("2.16.840.1.114513.1.10")
 
+def generate_ec_private_key(curve='prime256v1', private_key_file='private.pem'):
+    """openssl ecparam -genkey -name prime256v1 -out private.pem"""
+    proc = subprocess.Popen(
+        ['openssl', 'ecparam','-genkey', '-name', curve,'-out', private_key_file],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = proc.communicate()
+
+    if err:
+        raise OSError(err)
+
+def extract_ec_public_key(private_key_file='private.pem', public_key_file='public.pem'):
+    """openssl ec -in private.pem -pubout -out public.pem"""
+    proc = subprocess.Popen(
+        ['openssl', 'ec', '-in', private_key_file, '-pubout', public_key_file],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = proc.communicate()
+
+    if not err:
+        with open(public_key_file, 'rb') as signature_file:
+            signature = signature_file.read()
+            return signature
+    else:
+        raise OSError(err)
 
 def generate_signature(to_be_signed_bytes, private_key_file='private.pem'):
     """openssl dgst -sha256 -sign private.pem -out signature.der message.txt"""
@@ -395,9 +418,12 @@ def generate_signature(to_be_signed_bytes, private_key_file='private.pem'):
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (out, err) = proc.communicate()
 
-    with open(signature_path, 'rb') as signature_file:
-        signature = signature_file.read()
-        return signature
+    if not err:
+        with open(signature_path, 'rb') as signature_file:
+            signature = signature_file.read()
+            return signature
+    else:
+        raise OSError(err)
 
 def verify_signature(signed_bytes, signature, public_key_file='public.pem'):
     """openssl dgst -sha256 -verify public.pem -signature signature.der message.txt"""
@@ -412,8 +438,10 @@ def verify_signature(signed_bytes, signature, public_key_file='public.pem'):
     proc = subprocess.Popen(['openssl', 'dgst', '-sha256', '-verify', public_key_file, '-signature', signature_path, byte_path],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (out, err) = proc.communicate()
-
-    return out.strip() == b"Verified OK"
+    if not err:
+        return out.strip() == b"Verified OK"
+    else:
+        raise OSError(err)
 
 
 if __name__ == '__main__':
