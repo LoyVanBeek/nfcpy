@@ -491,7 +491,7 @@ if __name__ == '__main__':
                              subject=subject,
                              cAAlgorithm="1.2.840.10045.4.3.2",
                              # ecdsaWithSha256: http://oid-info.com/get/1.2.840.10045.4.3.2
-                             cAAlgParams=base64.decodebytes(b'BggqhkjOPQMBBw=='),
+                             cAAlgParams=base64.decodebytes(b'BggqhkjOPQMBBw=='), # EC PARAMETERS
                              # Parameters for the elliptic curve: http://oid-info.com/get/1.2.840.10045.3.1.7
                              issuer=subject,  # This is a self-signed certificate
                              # validFrom=int(123456789).to_bytes(4, byteorder='big'), # seconds since epoch, optional
@@ -500,8 +500,8 @@ if __name__ == '__main__':
                              # pKAlgParams="1.2.3.4", #Optional
                              pubKey=base64.decodebytes(b'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyCjVqzDqCn5KS2QYmD6bCajY1L8+\nla/50oJSDw5nKZm9zqeUIxwpl215Gz+aeBJOEHEC06fHjnb3TNdQcu1aKg=='),
                              # authKeyId=authkey, optional, See https://tools.ietf.org/html/rfc5280#section-4.2.1.1 for explanation
-                             subjKeyId=int(1).to_bytes(1, byteorder='big'),  # Key ID of the subject (us)
-                             keyUsage=0b10100000.to_bytes(1, byteorder='big'),
+                             subjKeyId=int(1).to_bytes(1, byteorder='big'),  # Key ID of the subject (which number do we give the private key?)
+                             keyUsage=0b10100000.to_bytes(1, byteorder='big'), # digitalSignature & keyEncipherment bit set
                              # See https://tools.ietf.org/html/rfc5280#section-4.2.1.3
                              certificatePolicy="2.5.29.32.0",  # Anypolicy: http://www.oid-info.com/get/2.5.29.32.0
                              # subjectAltName=subjectAlternativeName, #optional
