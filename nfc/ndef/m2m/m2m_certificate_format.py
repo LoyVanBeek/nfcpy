@@ -573,3 +573,8 @@ if __name__ == '__main__':
     print(certificate.prettyPrint())
     print(binascii.hexlify(der_encoder.encode(certificate)))
     print(len(der_encoder.encode(certificate)))
+
+    with open('m2m_certificate.der', 'wb+') as cert_file:
+        cert_file.write(b'------BEGIN CERTIFICATE------'+b'\n')
+        cert_file.write(base64.encodebytes(der_encoder.encode(certificate)))
+        cert_file.write(b'------END CERTIFICATE------')
