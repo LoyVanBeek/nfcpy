@@ -446,6 +446,49 @@ def verify_signature(signed_bytes, signature, public_key_path='public.pem'):
 def certificate_to_m2m_der(certificate_path):
     pass
 
+def self_sign_certificate(tbs_certificate, private_key_path='private.pem', public_key_path='public.pem', as_bytes=False):
+    with open(public_key_path, 'rb') as public_key_file:
+        public_key_base64 = public_key_file.read()
+        public_key_bytes = base64.decodebytes(public_key_base64)
+
+        tbs_certificate['pubKey'] = public_key_bytes
+
+    tbs_cert_bytes = der_encoder.encode(tbs)
+    signature_bytes = generate_signature(tbs_cert_bytes, private_key_path=private_key_path)
+
+    cACalcValue = univ.OctetString(value=signature_bytes)
+    certificate = Certificate.new(tbs, cACalcValue)
+
+    if as_bytes:
+        return der_encoder.encode(certificate)
+    else:
+        return certificate
+
+
+DUMMY_SUBJECT = Name.new(AttributeValue(country='US'),
+                         AttributeValue(organization='ACME corp.'),
+                         #AttributeValue(stateOrProvince='New Jersey'),
+                         AttributeValue(locality='Fairfield'))
+
+DUMMY_TO_BE_SIGNED_CERTIFICATE = TBSCertificate.new(version=0,
+                         serialNumber=int(123456789).to_bytes(20, byteorder='big'),
+                         subject=DUMMY_SUBJECT,
+                         cAAlgorithm="1.2.840.10045.4.3.2",
+                         # ecdsaWithSha256: http://oid-info.com/get/1.2.840.10045.4.3.2
+                         cAAlgParams=base64.decodebytes(b'BggqhkjOPQMBBw=='),  # EC PARAMETERS
+                         # Parameters for the elliptic curve: http://oid-info.com/get/1.2.840.10045.3.1.7
+                         issuer=DUMMY_SUBJECT,  # This is a self-signed certificate
+                         pKAlgorithm="1.2.840.10045.4.3.2",  # Same as cAAlgorithm
+                         pubKey=base64.decodebytes(
+                             b'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyCjVqzDqCn5KS2QYmD6bCajY1L8+\nla/50oJSDw5nKZm9zqeUIxwpl215Gz+aeBJOEHEC06fHjnb3TNdQcu1aKg=='),
+                         subjKeyId=int(1).to_bytes(1, byteorder='big'),
+                         # Key ID of the subject (which number do we give the private key?)
+                         keyUsage=0b10100000.to_bytes(1, byteorder='big'),  # digitalSignature & keyEncipherment bit set
+                         # See https://tools.ietf.org/html/rfc5280#section-4.2.1.3
+                         certificatePolicy="2.5.29.32.0",  # Anypolicy: http://www.oid-info.com/get/2.5.29.32.0
+                         )
+
+
 if __name__ == '__main__':
     issuer = Name.new(AttributeValue(country='US'),
                       AttributeValue(organization='Big CAhuna burger'),
@@ -458,7 +501,7 @@ if __name__ == '__main__':
 
     subject = Name.new(AttributeValue(country='US'),
                        AttributeValue(organization='ACME corp.'),
-                       #AttributeValue(stateOrProvince='New Jersey'),
+                       # AttributeValue(stateOrProvince='New Jersey'),
                        AttributeValue(locality='Fairfield'))
     der_encoder.encode(subject)
 
@@ -560,15 +603,11 @@ if __name__ == '__main__':
                              # extendedKeyUsage="2.16.840.1.114513.29.37", # Optional. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
                              # cRLDistribPointURI=u'www.certificatebegone.com/' # Optional
                              )
-    # der_encoder.encode(tbs)
+    import hashlib
 
-    with open('certificate_signature.der', 'rb') as signature_file:
-        signature_der = signature_file.read()
+    print(hashlib.sha224(der_encoder.encode(tbs)).hexdigest())
 
-    cACalcValue = univ.OctetString(value=signature_der)
-    der_encoder.encode(cACalcValue)
-
-    certificate = Certificate.new(tbs, cACalcValue)
+    certificate = self_sign_certificate(tbs, private_key_path='private.pem', public_key_path='public.pem')
 
     print(certificate.prettyPrint())
     print(binascii.hexlify(der_encoder.encode(certificate)))
