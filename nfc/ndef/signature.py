@@ -55,7 +55,7 @@ class SignatureRecord(Record):
 
     def __init__(self,
                  version=0x20, signature=None,
-                 certificate_chain=None, as_uri=None, signature_type=None, hash_type=None, certificate_format=None,
+                 certificate_chain=None, as_uri=None, signature_type=None, hash_type=HashType.SHA_256_SHS, certificate_format=None,
                  next_certificate_uri=None,
                  data=None):
         """
@@ -65,7 +65,7 @@ class SignatureRecord(Record):
         :type signature_type SignatureType
         :type hash_type HashType
         :param as_uri Whether to include the actual signature (then set False) or an URI reference to it (then set to True)
-        :type as_uri bool
+        :type as_uri string the URI of the signature
         :param certificate_chain a sequence of certificates. Each element must be a bytes-like object.
         :type certificate_chain [bytes]
         :param certificate_format indicates the type of certificate for all of the certificates in certificate_chain
@@ -74,14 +74,18 @@ class SignatureRecord(Record):
         super(SignatureRecord, self).__init__('urn:nfc:wkt:Sig')
 
         if not data:
+            assert version != None and signature_type != None
+            if signature_type != SignatureType.NoSignaturePresent:
+                assert certificate_chain and certificate_format != None and hash_type != None
+
             self._version = version
             self.certificate_chain = certificate_chain
             self.certificate_format = certificate_format
-            self.as_uri = as_uri
+            self.as_uri = as_uri != None
+            self.uri = as_uri if self.as_uri else None
             self.signature_type = signature_type
             self.hash_type = hash_type
             self.signature = signature
-            self.uri = None
             self.next_certificate_uri = next_certificate_uri
         else:
             # Then parse all the data to a signature and have it verified later on
@@ -139,6 +143,9 @@ class SignatureRecord(Record):
     @property
     def data(self):
         if self.signature_type != SignatureType.NoSignaturePresent:
+            if not self.signature:
+                raise ValueError("This SignatureRecord has no signature yet. Use the sign-method to generate a signature")
+
             return bytes(self.version + self.signature_field + self.certificate_chain_field)
         else:
             return bytes(self.version + self.signature_field)  # See [SIGNATURE] sec 3.3.3, 1st bullet point

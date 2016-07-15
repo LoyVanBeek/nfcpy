@@ -1,12 +1,12 @@
 import unittest
 
 import ecdsa
-from ..signature import SignatureRecord, SignatureType
+from ..signature import SignatureRecord, SignatureType, CertificateFormat, HashType
 from ..record import Record
 
 class TestEmptySignature(unittest.TestCase):
     def setUp(self):
-        self.sig = SignatureRecord(as_uri=False,
+        self.sig = SignatureRecord(as_uri=None,
                               signature_type=SignatureType.NoSignaturePresent)
 
     def test_empty_signature(self):
@@ -34,7 +34,8 @@ class TestSigningAndVerification(unittest.TestCase):
         self.record = Record('urn:nfc:wkt:T', 'identifier', bytes(b'Hello World'))
         self.record_data = bytes(self.record)
 
-        self.sig = SignatureRecord(as_uri=False, signature_type=SignatureType.ECDSA_DSS_P256)
+        self.sig = SignatureRecord(as_uri=None, signature_type=SignatureType.ECDSA_DSS_P256,
+                                   certificate_chain=[b'dummy'], certificate_format=CertificateFormat.M2M)
 
         self.curve = ecdsa.NIST256p
         self.signing_key = ecdsa.SigningKey.generate(curve=self.curve)
