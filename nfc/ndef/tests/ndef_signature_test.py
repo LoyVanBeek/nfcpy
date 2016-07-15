@@ -6,8 +6,8 @@ from ..record import Record
 
 class TestEmptySignature(unittest.TestCase):
     def setUp(self):
-        self.sig = SignatureRecord(as_uri=None,
-                              signature_type=SignatureType.NoSignaturePresent)
+        self.sig = SignatureRecord(signature_uri=None,
+                                   signature_type=SignatureType.NoSignaturePresent)
 
     def test_empty_signature(self):
         self.assertEqual(bytes(self.sig), b'\x11' # header flags. 0x11 = 0b00010001. MessageEnd and MessageBegin are both zero, those will be set only when the record is embedded in a message
@@ -34,7 +34,7 @@ class TestSigningAndVerification(unittest.TestCase):
         self.record = Record('urn:nfc:wkt:T', 'identifier', bytes(b'Hello World'))
         self.record_data = bytes(self.record)
 
-        self.sig = SignatureRecord(as_uri=None, signature_type=SignatureType.ECDSA_DSS_P256,
+        self.sig = SignatureRecord(signature_uri=None, signature_type=SignatureType.ECDSA_DSS_P256,
                                    certificate_chain=[b'dummy'], certificate_format=CertificateFormat.M2M)
 
         self.curve = ecdsa.NIST256p
@@ -56,3 +56,53 @@ class TestSigningAndVerification(unittest.TestCase):
         verified = self.sig.verify(data_to_verify=tampered_data, key_str_curve=(self.verifying_key.to_string(), self.curve))
 
         self.assertEqual(verified, False)
+
+
+class TestSignatureWithDummyCertificate(unittest.TestCase):
+    def setUp(self):
+        self.dummy_certificate_0 = bytes(list(range(128)))  # Just empty a recognizable byte sequence, no real certificate
+        self.dummy_certificate_1 = bytes(list(range(128, 256)))  # Just empty a recognizable byte sequence, no real certificate
+
+        to_be_signed_data = bytes(list(range(100)))
+
+        self.curve = ecdsa.NIST256p
+        self.signing_key = ecdsa.SigningKey.generate(curve=self.curve)
+        self.verifying_key = self.signing_key.get_verifying_key()
+
+        self.sig = SignatureRecord(signature_uri=None,
+                                   signature_type=SignatureType.ECDSA_DSS_P256,
+                                   certificate_chain=[self.dummy_certificate_0, self.dummy_certificate_1],
+                                   certificate_format=CertificateFormat.M2M)
+
+        signature = self.sig.sign(to_be_signed_data, key_str_curve=(self.signing_key.to_string(), self.curve))
+
+    def test_signature(self):
+        # self.assertEqual(bytes(self.sig), b'\x11' # header flags. 0x11 = 0b00010001. MessageEnd and MessageBegin are both zero, those will be set only when the record is embedded in a message
+        #                                   b'\x03' # Type length (Sig is 3 letters)
+        #                                   b'\x02' # Payload length. After the type, there come 2 bytes.
+        #                                   b'Sig'  # Record type
+        #                                   b'\x20' # version
+        #                                   b'\x00' # sigtype = no sig present. This ends the message
+        #                 )
+        pass
+
+    def test_round_trip(self):
+        # Exact same data as in test_empty_signature above
+        import ipdb; ipdb.set_trace()
+        # break /home/lvanbeek/git/nfcpy/nfc/ndef/signature.py:244
+        data = bytes(self.sig)
+
+        parsed_sig = SignatureRecord(data=data)
+
+        self.assertEqual(self.sig._version, parsed_sig._version)
+        self.assertEqual(self.sig.certificate_chain, parsed_sig.certificate_chain)
+        self.assertEqual(self.sig.certificate_format, parsed_sig.certificate_format)
+        self.assertEqual(self.sig.as_uri, parsed_sig.as_uri)
+        self.assertEqual(self.sig.signature_type, parsed_sig.signature_type)
+        self.assertEqual(self.sig.hash_type, parsed_sig.hash_type)
+        self.assertEqual(self.sig.signature, parsed_sig.signature)
+        self.assertEqual(self.sig.uri, parsed_sig.uri)
+        self.assertEqual(self.sig.next_certificate_uri, parsed_sig.next_certificate_uri)
+
+        self.assertEqual(self.dummy_certificate_0, parsed_sig.certificate_chain[0])
+        self.assertEqual(self.dummy_certificate_1, parsed_sig.certificate_chain[1])

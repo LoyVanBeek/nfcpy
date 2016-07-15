@@ -55,7 +55,7 @@ class SignatureRecord(Record):
 
     def __init__(self,
                  version=0x20, signature=None,
-                 certificate_chain=None, as_uri=None, signature_type=None, hash_type=HashType.SHA_256_SHS, certificate_format=None,
+                 certificate_chain=None, signature_uri=None, signature_type=None, hash_type=HashType.SHA_256_SHS, certificate_format=None,
                  next_certificate_uri=None,
                  data=None):
         """
@@ -64,8 +64,8 @@ class SignatureRecord(Record):
         :param version: a tuple of (major, minor) version number
         :type signature_type SignatureType
         :type hash_type HashType
-        :param as_uri Whether to include the actual signature (then set False) or an URI reference to it (then set to True)
-        :type as_uri string the URI of the signature
+        :param signature_uri Whether to include the actual signature (then set False) or an URI reference to it (then set to True)
+        :type signature_uri string the URI of the signature
         :param certificate_chain a sequence of certificates. Each element must be a bytes-like object.
         :type certificate_chain [bytes]
         :param certificate_format indicates the type of certificate for all of the certificates in certificate_chain
@@ -81,8 +81,8 @@ class SignatureRecord(Record):
             self._version = version
             self.certificate_chain = certificate_chain
             self.certificate_format = certificate_format
-            self.as_uri = as_uri != None
-            self.uri = as_uri if self.as_uri else None
+            self.as_uri = signature_uri != None
+            self.uri = signature_uri if self.as_uri else None
             self.signature_type = signature_type
             self.hash_type = hash_type
             self.signature = signature
@@ -181,10 +181,9 @@ class SignatureRecord(Record):
         if self.signature_type == SignatureType.NoSignaturePresent:
             return bytes([URI_present | self.signature_type.value])  # If no signature present: don't put the other fields there
         else:
-            return bytes([URI_present | self.signature_type.value,
-                          self.hash_type.value,
-                          len(self.signature).to_bytes(2, "big"),
-                          self.signature])
+            return bytes([URI_present | self.signature_type.value, self.hash_type.value]) + \
+                   len(self.signature).to_bytes(2, "big") + \
+                   self.signature
 
     @signature_field.setter
     def signature_field(self, data):
@@ -242,7 +241,8 @@ class SignatureRecord(Record):
 
         first = bytes([first_byte])
 
-        cert_store = bytes([self._encode_certificate_field(cert) for cert in self.certificate_chain])
+        cert_bytes = [self._encode_certificate_field(cert) for cert in self.certificate_chain]
+        cert_store = b''.join(cert_bytes)  # A solution based on f writing would be better here as well
 
         if self.next_certificate_uri:
             cert_uri = self._encode_uri_subfield(self.next_certificate_uri)
