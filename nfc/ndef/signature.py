@@ -32,6 +32,9 @@ class HashType(Enum):
     SHA_256_SHS = 0x02
     # Any other value if Reserved for Future Use
 
+class CertificateFormat(Enum):
+    X_509 = 0x00
+    M2M = 0x01
 
 class SignatureRecord(Record):
     """NDEF Signature Records are used to sign the previous records in an NDEF message.
@@ -51,7 +54,8 @@ class SignatureRecord(Record):
 
     def __init__(self,
                  version=0x20, signature=None,
-                 certificate_chain=None, as_uri=None, signature_type=None, hash_type=None,
+                 certificate_chain=None, as_uri=None, signature_type=None, hash_type=None, certificate_format=None,
+                 next_certificate_uri=None,
                  data=None):
         """
         Construct a Signature record from the given parameters.
@@ -61,17 +65,23 @@ class SignatureRecord(Record):
         :type hash_type HashType
         :param as_uri Whether to include the actual signature (then set False) or an URI reference to it (then set to True)
         :type as_uri bool
+        :param certificate_chain a sequence of certificates. Each element must be a bytes-like object.
+        :type certificate_chain [bytes]
+        :param certificate_format indicates the type of certificate for all of the certificates in certificate_chain
+        :type certificate_format CertificateFormat
         """
         super(SignatureRecord, self).__init__('urn:nfc:wkt:Sig')
 
         if not data:
             self.version = version
-            self.chain = certificate_chain
+            self.certificate_chain = certificate_chain
+            self.certificate_format = certificate_format
             self.as_uri = as_uri
             self.signature_type = signature_type
             self.hash_type = hash_type
             self.signature = signature
             self.uri = None
+            self.next_certificate_uri = next_certificate_uri
         else:
             # Then parse all the data to a signature and have it verified later on
             # TODO
@@ -131,7 +141,7 @@ class SignatureRecord(Record):
 
     @property
     def data(self):
-        return bytes([self.version]) + self.signature_field + self.certificate_field
+        return bytes([self.version]) + self.signature_field + self.certificate_chain_field
 
     @property
     def signature_field(self):
@@ -185,8 +195,85 @@ class SignatureRecord(Record):
                 raise ValueError("The signature is referenced by URI but SignatureType == 0: No signature present")
 
     @property
-    def certificate_field(self):
-        return bytes()
+    def certificate_chain_field(self):
+        first_byte =  0b00000000
+
+        uri_present = 0b10000000 if self.next_certificate_uri else 0
+        first_byte |= uri_present
+
+        cert_format = int(self.certificate_format.value) << 4
+        first_byte |= cert_format
+
+        nbr_of_certs = len(self.certificate_chain)
+        assert nbr_of_certs <= 15  # Only 4 bits available
+        first_byte |= nbr_of_certs
+
+        first = bytes([first_byte])
+
+        cert_store = bytes([self._encode_certificate_field(cert) for cert in self.certificate_chain])
+
+        if self.next_certificate_uri:
+            cert_uri = self._encode_uri_subfield(self.next_certificate_uri)
+            return bytes(first + cert_store + cert_uri)
+        else:
+            return bytes(first + cert_store)
+
+    @staticmethod
+    def _encode_certificate_field(certificate_bytes):
+        length = len(certificate_bytes).to_bytes(2, 'big')
+        return bytes(length + certificate_bytes)
+
+    @staticmethod
+    def _decode_certificate_field(byte_sequence):
+        """Extracts 1 certificate field from a longer byte sequence.
+        The bytes after the certificate are also returned
+        :rtype tuple (content, remainder of byte_sequence)"""
+        length = int.from_bytes(byte_sequence[:2], byteorder='big')
+        content = byte_sequence[2:2+length]
+
+        return content, byte_sequence[:2+length]
+
+    @staticmethod
+    def _encode_uri_subfield(uri):
+        utf8 = uri.encode('utf8')
+        length = len(utf8).to_bytes(2, 'big')
+        return bytes(length + utf8)
+
+    @staticmethod
+    def _decode_uri_subfield(byte_sequence):
+        length = int.from_bytes(byte_sequence[:2], byteorder='big')
+        utf8 = byte_sequence[2:2+length]
+        content = utf8.decode("utf-8")
+        return content
+
+    @certificate_chain_field.setter
+    def certificate_chain_field(self, data):
+        uri_present = (data[0] & 0b10000000) == 1
+
+        select_cert_format_bits = 0b01110000
+        cert_format_bits = data[0] & select_cert_format_bits
+        cert_format = cert_format_bits >> 4
+        self.signature_type = CertificateFormat(cert_format)
+
+        select_nbr_of_certs_bits = 0b000011111
+        nbr_of_certs = data[0] & select_nbr_of_certs_bits
+
+        certificate_chain = []
+
+        rest = data[1:]
+        for _ in range(nbr_of_certs):
+            cert, rest = self._decode_certificate_field(rest)
+            certificate_chain += [cert]
+
+        self.certificate_chain = certificate_chain
+
+        if uri_present:
+            if rest:
+                self.next_certificate_uri = self._decode_uri_subfield(rest)
+            else:
+                raise ValueError("Certificate chain field indicated an URI would be present but there were no bytes for the URI found")
+
+
 
     def __str__(self):
         return "SignatureRecord(version={vers}, as_uri={as_uri}, signature_type={sigtype}, signature={signature})".format(
