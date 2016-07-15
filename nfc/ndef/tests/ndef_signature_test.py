@@ -12,7 +12,7 @@ class TestEmptySignature(unittest.TestCase):
     def test_empty_signature(self):
         self.assertEqual(bytes(self.sig), b'\x11' # header flags. 0x11 = 0b00010001. MessageEnd and MessageBegin are both zero, those will be set only when the record is embedded in a message
                                           b'\x03' # Type length (Sig is 3 letters)
-                                          b'\x02' # Payload length. After the type, there come 2 bytes.
+                                          b'\x02' # Payload length. After the type (Sig), there come 2 bytes of payload
                                           b'Sig'  # Record type
                                           b'\x20' # version
                                           b'\x00' # sigtype = no sig present. This ends the message
@@ -74,7 +74,7 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
                                    certificate_chain=[self.dummy_certificate_0, self.dummy_certificate_1],
                                    certificate_format=CertificateFormat.M2M)
 
-        signature = self.sig.sign(to_be_signed_data, key_str_curve=(self.signing_key.to_string(), self.curve))
+        self.signature = self.sig.sign(to_be_signed_data, key_str_curve=(self.signing_key.to_string(), self.curve))
 
     def test_signature(self):
         # self.assertEqual(bytes(self.sig), b'\x11' # header flags. 0x11 = 0b00010001. MessageEnd and MessageBegin are both zero, those will be set only when the record is embedded in a message
@@ -88,9 +88,24 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
 
     def test_round_trip(self):
         # Exact same data as in test_empty_signature above
-        import ipdb; ipdb.set_trace()
-        # break /home/lvanbeek/git/nfcpy/nfc/ndef/signature.py:244
         data = bytes(self.sig)
+
+        # There should be:
+        # 6 bytes of header
+        # 3 bytes of type
+        # In the payload:
+        # 1 byte of version
+        # 68 bytes for the signature field:
+        #  - 2 byte header of signature field
+        #  - 64 bytes of signature + 2 bytes to indicate that length
+        #
+        # 261 bytes for the certificate chain field
+        #  - 1 byte of header
+        #  - 2x certificate of 128 bytes as defined in setUp + 2 bytes per certificate to indicate that length
+        #
+        # The total is then 6+1+68+261 = 336
+
+        self.assertEqual(len(data), 339)
 
         parsed_sig = SignatureRecord(data=data)
 
