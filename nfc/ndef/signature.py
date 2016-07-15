@@ -8,6 +8,7 @@ NFC Forum"""
 
 from enum import Enum
 import ecdsa
+import io
 
 from .record import Record
 
@@ -73,7 +74,7 @@ class SignatureRecord(Record):
         super(SignatureRecord, self).__init__('urn:nfc:wkt:Sig')
 
         if not data:
-            self.version = version
+            self._version = version
             self.certificate_chain = certificate_chain
             self.certificate_format = certificate_format
             self.as_uri = as_uri
@@ -84,11 +85,7 @@ class SignatureRecord(Record):
             self.next_certificate_uri = next_certificate_uri
         else:
             # Then parse all the data to a signature and have it verified later on
-            # TODO
-            self.version = data[0]
-            self.signature_field = data[1:]
-
-            pass
+            self.data = data
 
     def sign(self, data_to_sign, pem_file=None, der_file=None, key_str_curve=None):
         """
@@ -141,7 +138,28 @@ class SignatureRecord(Record):
 
     @property
     def data(self):
-        return bytes([self.version]) + self.signature_field + self.certificate_chain_field
+        if self.signature_type != SignatureType.NoSignaturePresent:
+            return bytes(self.version + self.signature_field + self.certificate_chain_field)
+        else:
+            return bytes(self.version + self.signature_field)  # See [SIGNATURE] sec 3.3.3, 1st bullet point
+
+    @data.setter
+    def data(self, value):
+        buffer = io.BytesIO(value)
+        self.version = buffer.read(1)[0]
+
+        self._read_signature_field(buffer)
+
+        if self.signature_type != SignatureType.NoSignaturePresent:  # See [SIGNATURE] sec 3.3.3, 1st bullet point
+            self._read_certificate_chain_field(buffer)
+
+    @property
+    def version(self):
+        return bytes([self._version])
+
+    @version.setter
+    def version(self, value):
+        self._version = value
 
     @property
     def signature_field(self):
@@ -165,11 +183,18 @@ class SignatureRecord(Record):
     def signature_field(self, data):
         """Parse the data of the signature field
         :type data bytes"""
-        self.as_uri = (data[0] & 0b10000000) > 0
+        buffer = io.BytesIO(data)
+        self._read_signature_field(buffer)
 
-        select_sigtype_bits = 0b01111111
-        sigtype = data[0] & select_sigtype_bits
-        self.signature_type = SignatureType(sigtype)
+    def _read_signature_field(self, f):
+        """Read a signature field from a file-like object
+        :type f io.BytesIO"""
+        first_byte = f.read(1)[0]
+        self.as_uri = (first_byte & 0b10000000) > 0
+
+        select_sig_type_bits = 0b01111111
+        sig_type = first_byte & select_sig_type_bits
+        self.signature_type = SignatureType(sig_type)
 
         if not self.as_uri:
             if self.signature_type == SignatureType.NoSignaturePresent:
@@ -181,16 +206,16 @@ class SignatureRecord(Record):
                 self.signature = None
                 return
             else:
-                self.hash_type = HashType(data[1])
+                self.hash_type = HashType(f.read(1)[0])
 
-                length = int.from_bytes(data[2:4], "big", signed=False)
-                self.signature = data[4:4+length]
+                length = int.from_bytes(f.read(2), "big", signed=False)
+                self.signature = f.read(length)
         else:
             if self.signature_type != SignatureType.NoSignaturePresent:
-                self.hash_type = HashType(data[1])
+                self.hash_type = HashType(f.read(1)[0])
 
-                length = int.from_bytes(data[2:4], "big", signed=False)
-                self.signature = data[4:4+length]
+                length = int.from_bytes(f.read(2), "big", signed=False)
+                self.signature = f.read(length)
             else:
                 raise ValueError("The signature is referenced by URI but SignatureType == 0: No signature present")
 
@@ -224,56 +249,41 @@ class SignatureRecord(Record):
         return bytes(length + certificate_bytes)
 
     @staticmethod
-    def _decode_certificate_field(byte_sequence):
-        """Extracts 1 certificate field from a longer byte sequence.
-        The bytes after the certificate are also returned
-        :rtype tuple (content, remainder of byte_sequence)"""
-        length = int.from_bytes(byte_sequence[:2], byteorder='big')
-        content = byte_sequence[2:2+length]
-
-        return content, byte_sequence[:2+length]
-
-    @staticmethod
     def _encode_uri_subfield(uri):
         utf8 = uri.encode('utf8')
         length = len(utf8).to_bytes(2, 'big')
         return bytes(length + utf8)
 
-    @staticmethod
-    def _decode_uri_subfield(byte_sequence):
-        length = int.from_bytes(byte_sequence[:2], byteorder='big')
-        utf8 = byte_sequence[2:2+length]
-        content = utf8.decode("utf-8")
-        return content
-
     @certificate_chain_field.setter
     def certificate_chain_field(self, data):
-        uri_present = (data[0] & 0b10000000) == 1
+        buffer = io.BytesIO(data)
+        self._read_certificate_chain_field(buffer)
+
+    def _read_certificate_chain_field(self, f):
+        """Read a signature field from a file-like object
+        :type f io.BytesIO"""
+        first_byte = f.read(1)[0]
+        uri_present = (first_byte & 0b10000000) == 1
 
         select_cert_format_bits = 0b01110000
-        cert_format_bits = data[0] & select_cert_format_bits
+        cert_format_bits = first_byte & select_cert_format_bits
         cert_format = cert_format_bits >> 4
         self.signature_type = CertificateFormat(cert_format)
 
         select_nbr_of_certs_bits = 0b000011111
-        nbr_of_certs = data[0] & select_nbr_of_certs_bits
+        nbr_of_certs = first_byte & select_nbr_of_certs_bits
 
         certificate_chain = []
 
-        rest = data[1:]
         for _ in range(nbr_of_certs):
-            cert, rest = self._decode_certificate_field(rest)
-            certificate_chain += [cert]
+            length = int.from_bytes(f.read(2), 'big')
+            certificate_chain += [f.read(length)]
 
         self.certificate_chain = certificate_chain
 
         if uri_present:
-            if rest:
-                self.next_certificate_uri = self._decode_uri_subfield(rest)
-            else:
-                raise ValueError("Certificate chain field indicated an URI would be present but there were no bytes for the URI found")
-
-
+            length = int.from_bytes(f.read(2), 'big')
+            self.next_certificate_uri = f.read(length)
 
     def __str__(self):
         return "SignatureRecord(version={vers}, as_uri={as_uri}, signature_type={sigtype}, signature={signature})".format(
