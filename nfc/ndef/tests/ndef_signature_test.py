@@ -1,4 +1,5 @@
 import unittest
+import random
 
 import ecdsa
 from ..signature import SignatureRecord, SignatureType, CertificateFormat, HashType
@@ -57,8 +58,8 @@ class TestSigningAndVerification(unittest.TestCase):
 
 class TestSignatureWithDummyCertificate(unittest.TestCase):
     def setUp(self):
-        self.dummy_certificate_0 = bytes(list(range(128)))  # Just empty a recognizable byte sequence, no real certificate
-        self.dummy_certificate_1 = bytes(list(range(128, 256)))  # Just empty a recognizable byte sequence, no real certificate
+        self.dummy_certificate_0 = bytes([random.randint(0, 255) for _ in range(317)])  # No real certificate, using length as reported by m2m/m2m_certificate_format.py
+        self.dummy_certificate_1 = bytes([random.randint(0, 255) for _ in range(317)])   # No real certificate, using length as reported by m2m/m2m_certificate_format.py
 
         to_be_signed_data = bytes(list(range(100)))
 
@@ -68,20 +69,10 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
 
         self.sig = SignatureRecord(signature_uri=None,
                                    signature_type=SignatureType.ECDSA_DSS_P256,
-                                   certificate_chain=[self.dummy_certificate_0, self.dummy_certificate_1],
+                                   certificate_chain=[self.dummy_certificate_0], #, self.dummy_certificate_1],
                                    certificate_format=CertificateFormat.M2M)
 
         self.signature = self.sig.sign(to_be_signed_data, key_str_curve=(self.signing_key.to_string(), self.curve))
-
-    def test_signature(self):
-        # self.assertEqual(bytes(self.sig), b'\x11' # header flags. 0x11 = 0b00010001. MessageEnd and MessageBegin are both zero, those will be set only when the record is embedded in a message
-        #                                   b'\x03' # Type length (Sig is 3 letters)
-        #                                   b'\x02' # Payload length. After the type, there come 2 bytes.
-        #                                   b'Sig'  # Record type
-        #                                   b'\x20' # version
-        #                                   b'\x00' # sigtype = no sig present. This ends the message
-        #                 )
-        pass
 
     def test_signature_field_roundtrip(self):
         data = bytes(self.sig.signature_field)
@@ -104,10 +95,10 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
         # 1 byte for URI_Present+Cert_format+Nbr_of_certs
         # 2x :
         #   2 bytes for length
-        #   128 bytes for each dummy certificate
+        #   317 bytes for each dummy certificate
         #
-        # Total: 261
-        self.assertEqual(len(data), 261)
+        # Total: 320
+        self.assertEqual(len(data), 320)
 
         parsed_sig = SignatureRecord(signature_uri=None, signature_type=SignatureType.NoSignaturePresent)
 
@@ -120,11 +111,12 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
         self.assertEqual(self.sig.next_certificate_uri, parsed_sig.next_certificate_uri)
 
         self.assertEqual(self.dummy_certificate_0, parsed_sig.certificate_chain[0])
-        self.assertEqual(self.dummy_certificate_1, parsed_sig.certificate_chain[1])
+        # self.assertEqual(self.dummy_certificate_1, parsed_sig.certificate_chain[1])
 
     def test_round_trip(self):
         # Exact same data as in test_empty_signature above
         data = bytes(self.sig)
+        print(len(data))
 
         # There should be:
         # 6 bytes of header
@@ -135,17 +127,14 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
         #  - 2 byte header of signature field
         #  - 64 bytes of signature + 2 bytes to indicate that length
         #
-        # 261 bytes for the certificate chain field
+        # 320 bytes for the certificate chain field
         #  - 1 byte of header
-        #  - 2x certificate of 128 bytes as defined in setUp + 2 bytes per certificate to indicate that length
+        #  - 1x certificate of 317 bytes as defined in setUp + 2 bytes per certificate to indicate that length
         #
-        # The total is then 6+1+68+261 = 336
+        # The total is then 6+3+1+68+320 = 398
 
-        self.assertEqual(len(data), 339)
+        self.assertEqual(len(data), 398)
 
-        # import ipdb; ipdb.set_trace()
-        # break /home/lvanbeek/git/nfcpy/nfc/ndef/signature.py:220
-        # break /home/lvanbeek/git/nfcpy/nfc/ndef/record.py:99
         parsed_sig = SignatureRecord(Record(data=data))
 
         self.assertEqual(self.sig._version, parsed_sig._version)
@@ -158,4 +147,4 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
         self.assertEqual(self.sig.next_certificate_uri, parsed_sig.next_certificate_uri)
 
         self.assertEqual(self.dummy_certificate_0, parsed_sig.certificate_chain[0])
-        self.assertEqual(self.dummy_certificate_1, parsed_sig.certificate_chain[1])
+        # self.assertEqual(self.dummy_certificate_1, parsed_sig.certificate_chain[1])
