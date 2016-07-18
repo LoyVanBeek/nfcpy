@@ -4,6 +4,7 @@ import random
 import ecdsa
 from ..signature import SignatureRecord, SignatureType, CertificateFormat, HashType
 from ..record import Record
+from ..message import Message
 
 class TestEmptySignature(unittest.TestCase):
     def setUp(self):
@@ -21,10 +22,29 @@ class TestEmptySignature(unittest.TestCase):
     def test_empty_signature(self):
         self.assertEqual(bytes(self.sig), self.bytes)
 
-    def test_parsing(self):
+    def test_parsing_from_raw_bytes(self):
         parsed_sig = SignatureRecord(Record(data=self.bytes))
         self.assertEqual(parsed_sig.as_uri, self.sig.as_uri)
         self.assertEqual(parsed_sig.signature_type, self.sig.signature_type)
+
+    def test_parsing_via_message(self):
+        orig_msg = Message(self.sig)
+        msg_bytes = orig_msg.to_bytes()
+
+        parsed_msg = Message(msg_bytes)
+        sig_rec = parsed_msg[0]
+        parsed_sig = SignatureRecord(sig_rec)
+
+        self.assertEqual(self.sig._version, parsed_sig._version)
+        self.assertEqual(self.sig.certificate_chain, parsed_sig.certificate_chain)
+        self.assertEqual(self.sig.certificate_format, parsed_sig.certificate_format)
+        self.assertEqual(self.sig.as_uri, parsed_sig.as_uri)
+        self.assertEqual(self.sig.signature_type, parsed_sig.signature_type)
+        self.assertEqual(self.sig.signature, parsed_sig.signature)
+        self.assertEqual(self.sig.next_certificate_uri, parsed_sig.next_certificate_uri)
+        self.assertEqual(self.sig.hash_type, parsed_sig.hash_type)
+
+        self.assertEqual(self.sig, parsed_sig)
 
 
 class TestSigningAndVerification(unittest.TestCase):
@@ -116,7 +136,7 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
     def test_round_trip(self):
         # Exact same data as in test_empty_signature above
         data = bytes(self.sig)
-        print(len(data))
+        # print(len(data))
 
         # There should be:
         # 6 bytes of header
@@ -148,3 +168,13 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
 
         self.assertEqual(self.dummy_certificate_0, parsed_sig.certificate_chain[0])
         # self.assertEqual(self.dummy_certificate_1, parsed_sig.certificate_chain[1])
+
+    def test_message_round_trip(self):
+        orig_msg = Message(self.sig)
+        msg_bytes = orig_msg.to_bytes()
+
+        parsed_msg = Message(msg_bytes)
+        sig_rec = parsed_msg[0]
+        sig = SignatureRecord(sig_rec)
+
+        self.assertEqual(self.sig, sig)

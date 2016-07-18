@@ -76,6 +76,16 @@ class SignatureRecord(Record):
         """
         super(SignatureRecord, self).__init__('urn:nfc:wkt:Sig')
 
+        self._version = None
+        self.certificate_chain = None
+        self.certificate_format = None
+        self.as_uri = None
+        self.uri = None
+        self.signature_type = None
+        self.hash_type = None
+        self.signature = None
+        self.next_certificate_uri = None
+
         if isinstance(version, Record):  # In that case, we parse the data of the Record to extract our fields from its .data
             record = version
             if record.type == self.type:
@@ -94,7 +104,7 @@ class SignatureRecord(Record):
             self.as_uri = signature_uri != None
             self.uri = signature_uri if self.as_uri else None
             self.signature_type = signature_type
-            self.hash_type = hash_type
+            self.hash_type = hash_type if signature_type != SignatureType.NoSignaturePresent else None
             self.signature = signature
             self.next_certificate_uri = next_certificate_uri
 
@@ -319,3 +329,16 @@ class SignatureRecord(Record):
             certfmt=self.certificate_format,
             chain=self.certificate_chain,
             nxt_cert_uri=self.next_certificate_uri)
+
+    def __eq__(self, other):
+        if isinstance(other, SignatureRecord):
+            return self._version            == other._version \
+                and self.certificate_chain  == other.certificate_chain \
+                and self.certificate_format == other.certificate_format \
+                and self.as_uri             == other.as_uri \
+                and self.signature_type     == other.signature_type \
+                and self.hash_type          == other.hash_type \
+                and self.signature          == other.signature \
+                and self.next_certificate_uri == other.next_certificate_uri
+        else:
+            return False
