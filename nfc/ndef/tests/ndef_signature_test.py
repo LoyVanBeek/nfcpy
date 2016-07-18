@@ -86,11 +86,11 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
     def test_signature_field_roundtrip(self):
         data = bytes(self.sig.signature_field)
 
-        empty = SignatureRecord(signature_uri=None, signature_type=SignatureType.NoSignaturePresent)
+        parsed_sig = SignatureRecord(signature_uri=None, signature_type=SignatureType.NoSignaturePresent)
 
         import io
         buffer = io.BytesIO(data)
-        parsed_sig = empty._read_signature_field(buffer)
+        parsed_sig._read_signature_field(buffer)
 
         self.assertEqual(self.sig.as_uri, parsed_sig.as_uri)
         self.assertEqual(self.sig.signature_type, parsed_sig.signature_type)
