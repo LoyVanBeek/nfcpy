@@ -64,7 +64,7 @@ class SignatureRecord(Record):
         """
         Construct a Signature record from the given parameters.
 
-        :param version: a tuple of (major, minor) version number
+        :param version: a tuple of (major, minor) version number. OR a Record, so its .data can be parsed for a SignatureRecord
         :type signature_type SignatureType
         :type hash_type HashType
         :param signature_uri Whether to include the actual signature (then set False) or an URI reference to it (then set to True)
@@ -76,7 +76,14 @@ class SignatureRecord(Record):
         """
         super(SignatureRecord, self).__init__('urn:nfc:wkt:Sig')
 
-        if not data:
+        if isinstance(version, Record):  # In that case, we parse the data of the Record to extract our fields from its .data
+            record = version
+            if record.type == self.type:
+                self.name = record.name
+                self.data = record.data
+            else:
+                raise ValueError("record type mismatch")
+        else:
             assert version != None and signature_type != None
             if signature_type != SignatureType.NoSignaturePresent:
                 assert certificate_chain and certificate_format != None and hash_type != None
@@ -90,9 +97,6 @@ class SignatureRecord(Record):
             self.hash_type = hash_type
             self.signature = signature
             self.next_certificate_uri = next_certificate_uri
-        else:
-            # Then parse all the data to a signature and have it verified later on
-            self.data = data
 
     def sign(self, data_to_sign, pem_file=None, der_file=None, key_str_curve=None):
         """

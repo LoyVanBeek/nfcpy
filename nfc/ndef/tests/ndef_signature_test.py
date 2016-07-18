@@ -9,22 +9,19 @@ class TestEmptySignature(unittest.TestCase):
         self.sig = SignatureRecord(signature_uri=None,
                                    signature_type=SignatureType.NoSignaturePresent)
 
+        header =  bytes( b'\x11'    # header flags. 0x11 = 0b00010001. MessageEnd and MessageBegin are both zero, those will be set only when the record is embedded in a message
+                         b'\x03'    # Type length (Sig is 3 letters)
+                         b'\x02')    # Payload length. After the type (Sig), there come 2 bytes of payload
+        rectype =        b'Sig'     # Record type
+        payload = bytes( b'\x20'    # version
+                         b'\x00')   # sigtype = no sig present. This ends the message
+        self.bytes = header + rectype + payload
+
     def test_empty_signature(self):
-        self.assertEqual(bytes(self.sig), b'\x11' # header flags. 0x11 = 0b00010001. MessageEnd and MessageBegin are both zero, those will be set only when the record is embedded in a message
-                                          b'\x03' # Type length (Sig is 3 letters)
-                                          b'\x02' # Payload length. After the type (Sig), there come 2 bytes of payload
-                                          b'Sig'  # Record type
-                                          b'\x20' # version
-                                          b'\x00' # sigtype = no sig present. This ends the message
-                        )
+        self.assertEqual(bytes(self.sig), self.bytes)
 
     def test_parsing(self):
-        # Exact same data as in test_empty_signature above
-        data = b'\x20' \
-               b'\x00'
-
-        # import ipdb; ipdb.set_trace()
-        parsed_sig = SignatureRecord(data=data)
+        parsed_sig = SignatureRecord(Record(data=self.bytes))
         self.assertEqual(parsed_sig.as_uri, self.sig.as_uri)
         self.assertEqual(parsed_sig.signature_type, self.sig.signature_type)
 
@@ -125,7 +122,7 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
         # import ipdb; ipdb.set_trace()
         # break /home/lvanbeek/git/nfcpy/nfc/ndef/signature.py:220
         # break /home/lvanbeek/git/nfcpy/nfc/ndef/record.py:99
-        parsed_sig = SignatureRecord(data=data)
+        parsed_sig = SignatureRecord(Record(data=data))
 
         self.assertEqual(self.sig._version, parsed_sig._version)
         self.assertEqual(self.sig.certificate_chain, parsed_sig.certificate_chain)
