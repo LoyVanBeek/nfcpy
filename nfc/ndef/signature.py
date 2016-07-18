@@ -12,6 +12,9 @@ import io
 
 from .record import Record
 
+def debug(i):
+    print("{0:08b}".format(i))
+
 class SignatureType(Enum):
     # See section 3.3.3.1 and table 5 of the specification
     NoSignaturePresent =            0x00
@@ -301,7 +304,7 @@ class SignatureRecord(Record):
 
     def __repr__(self):
         return "SignatureRecord(version={vers}, as_uri={as_uri}, signature_type={sigtype}, signature={signature})".format(
-            vers=self.version,
+            vers=self._version,
             as_uri=self.as_uri,
             sigtype=self.signature_type,
             signature=self.signature)

@@ -86,6 +86,21 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
         #                 )
         pass
 
+    def test_signature_field_roundtrip(self):
+        data = bytes(self.sig.signature_field)
+
+        empty = SignatureRecord(signature_uri=None, signature_type=SignatureType.NoSignaturePresent)
+
+        import io
+        buffer = io.BytesIO(data)
+        parsed_sig = empty._read_signature_field(buffer)
+
+        self.assertEqual(self.sig.as_uri, parsed_sig.as_uri)
+        self.assertEqual(self.sig.signature_type, parsed_sig.signature_type)
+        self.assertEqual(self.sig.hash_type, parsed_sig.hash_type)
+        self.assertEqual(self.sig.signature, parsed_sig.signature)
+
+
     def test_round_trip(self):
         # Exact same data as in test_empty_signature above
         data = bytes(self.sig)
@@ -107,6 +122,9 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
 
         self.assertEqual(len(data), 339)
 
+        # import ipdb; ipdb.set_trace()
+        # break /home/lvanbeek/git/nfcpy/nfc/ndef/signature.py:220
+        # break /home/lvanbeek/git/nfcpy/nfc/ndef/record.py:99
         parsed_sig = SignatureRecord(data=data)
 
         self.assertEqual(self.sig._version, parsed_sig._version)
