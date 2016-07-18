@@ -97,6 +97,30 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
         self.assertEqual(self.sig.hash_type, parsed_sig.hash_type)
         self.assertEqual(self.sig.signature, parsed_sig.signature)
 
+    def test_certchain_field_roundtrip(self):
+        data = bytes(self.sig.certificate_chain_field)
+
+        # Expected length:
+        # 1 byte for URI_Present+Cert_format+Nbr_of_certs
+        # 2x :
+        #   2 bytes for length
+        #   128 bytes for each dummy certificate
+        #
+        # Total: 261
+        self.assertEqual(len(data), 261)
+
+        parsed_sig = SignatureRecord(signature_uri=None, signature_type=SignatureType.NoSignaturePresent)
+
+        import io
+        buffer = io.BytesIO(data)
+        parsed_sig._read_certificate_chain_field(buffer)
+
+        self.assertEqual(self.sig.certificate_chain, parsed_sig.certificate_chain)
+        self.assertEqual(self.sig.certificate_format, parsed_sig.certificate_format)
+        self.assertEqual(self.sig.next_certificate_uri, parsed_sig.next_certificate_uri)
+
+        self.assertEqual(self.dummy_certificate_0, parsed_sig.certificate_chain[0])
+        self.assertEqual(self.dummy_certificate_1, parsed_sig.certificate_chain[1])
 
     def test_round_trip(self):
         # Exact same data as in test_empty_signature above
@@ -131,7 +155,6 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
         self.assertEqual(self.sig.signature_type, parsed_sig.signature_type)
         self.assertEqual(self.sig.hash_type, parsed_sig.hash_type)
         self.assertEqual(self.sig.signature, parsed_sig.signature)
-        self.assertEqual(self.sig.uri, parsed_sig.uri)
         self.assertEqual(self.sig.next_certificate_uri, parsed_sig.next_certificate_uri)
 
         self.assertEqual(self.dummy_certificate_0, parsed_sig.certificate_chain[0])

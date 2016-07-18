@@ -282,9 +282,9 @@ class SignatureRecord(Record):
         select_cert_format_bits = 0b01110000
         cert_format_bits = first_byte & select_cert_format_bits
         cert_format = cert_format_bits >> 4
-        self.signature_type = CertificateFormat(cert_format)
+        self.certificate_format = CertificateFormat(cert_format)
 
-        select_nbr_of_certs_bits = 0b000011111
+        select_nbr_of_certs_bits = 0b00001111
         nbr_of_certs = first_byte & select_nbr_of_certs_bits
 
         certificate_chain = []
@@ -298,6 +298,8 @@ class SignatureRecord(Record):
         if uri_present:
             length = int.from_bytes(f.read(2), 'big')
             self.next_certificate_uri = f.read(length)
+        else:
+            self.next_certificate_uri = None
 
     def __str__(self):
         return "SignatureRecord(version={vers}, as_uri={as_uri}, signature_type={sigtype}, signature={signature})".format(
@@ -307,8 +309,13 @@ class SignatureRecord(Record):
             signature=self.signature)
 
     def __repr__(self):
-        return "SignatureRecord(version={vers}, as_uri={as_uri}, signature_type={sigtype}, signature={signature})".format(
+        return "SignatureRecord(version={vers}, as_uri={as_uri}, signature_type={sigtype}, signature={signature}," \
+               " hash_type={hsh}, certificate_format={certfmt}, certificate_chain={chain}, next_certificate_uri={nxt_cert_uri})".format(
             vers=self._version,
             as_uri=self.as_uri,
             sigtype=self.signature_type,
-            signature=self.signature)
+            signature=self.signature,
+            hsh=self.hash_type,
+            certfmt=self.certificate_format,
+            chain=self.certificate_chain,
+            nxt_cert_uri=self.next_certificate_uri)
