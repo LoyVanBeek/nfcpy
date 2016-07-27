@@ -454,7 +454,6 @@ def m2m_certificate_to_file(certificate, certificate_path):
 
 def m2m_bytes_from_file(certificate_path):
     with open(certificate_path, 'rb') as cert_file:
-        import ipdb; ipdb.set_trace()
         lines = cert_file.readlines()
         content_lines = lines[1:-1]
         content = b''.join(content_lines)
