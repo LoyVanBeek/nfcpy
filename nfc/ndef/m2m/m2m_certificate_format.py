@@ -446,6 +446,21 @@ def verify_signature(signed_bytes, signature, public_key_path='public.pem'):
 def certificate_to_m2m_der(certificate_path):
     pass
 
+def m2m_certificate_to_file(certificate, certificate_path):
+    with open(certificate_path, 'wb+') as cert_file:
+        cert_file.write(b'------BEGIN CERTIFICATE------'+b'\n')
+        cert_file.write(base64.encodebytes(der_encoder.encode(certificate)))
+        cert_file.write(b'------END CERTIFICATE------')
+
+def m2m_bytes_from_file(certificate_path):
+    with open(certificate_path, 'rb') as cert_file:
+        import ipdb; ipdb.set_trace()
+        lines = cert_file.readlines()
+        content_lines = lines[1:-1]
+        content = b''.join(content_lines)
+        return base64.decodebytes(content)
+
+
 def self_sign_certificate(tbs_certificate, private_key_path='private.pem', public_key_path='public.pem', as_bytes=False):
     with open(public_key_path, 'rb') as public_key_file:
         public_key_base64 = public_key_file.read()
@@ -613,7 +628,6 @@ if __name__ == '__main__':
     print(binascii.hexlify(der_encoder.encode(certificate)))
     print(len(der_encoder.encode(certificate)))
 
-    with open('m2m_certificate.der', 'wb+') as cert_file:
-        cert_file.write(b'------BEGIN CERTIFICATE------'+b'\n')
-        cert_file.write(base64.encodebytes(der_encoder.encode(certificate)))
-        cert_file.write(b'------END CERTIFICATE------')
+    m2m_certificate_to_file(certificate, 'm2m_certificate.der')
+
+
