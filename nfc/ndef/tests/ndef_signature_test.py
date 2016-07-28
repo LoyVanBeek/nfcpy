@@ -178,3 +178,18 @@ class TestSignatureWithDummyCertificate(unittest.TestCase):
         sig = SignatureRecord(sig_rec)
 
         self.assertEqual(self.sig, sig)
+
+class TestSettingSignatureDirectly(unittest.TestCase):
+    def test_setting_directly(self):
+        signature = b'0E\x02 g\xff\x81\x98\xbbI\x9b \x0e[\xe9\xb0\xfc}\x1bB\x05i;W\x0b\xc0p\xf2|r\xeas\xaf\xcei\xaf\x02!\x00\xe62\xf29P\r\x8a\xa1\xf85\ti\xa9\xb0"5\xe0\xfbr\x05\xd8\xd8EW\x10}\x99\x96\tl,F'
+        signature_record = SignatureRecord(signature_uri=None,
+                                           signature_type=SignatureType.ECDSA_DSS_P256,
+                                           certificate_chain=[bytes([random.randint(0, 255) for _ in range(317)])],
+                                           certificate_format=CertificateFormat.M2M,
+                                           next_certificate_uri=None)
+
+        signature_record.signature = signature
+
+        b = signature_record.to_bytes()
+
+        print(b)

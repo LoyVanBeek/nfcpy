@@ -614,7 +614,7 @@ if __name__ == '__main__':
                              certificatePolicy="2.5.29.32.0",  # Anypolicy: http://www.oid-info.com/get/2.5.29.32.0
                              # subjectAltName=subjectAlternativeName, #optional
                              # issuerAltName=issuerAlternativeName, #Optional
-                             # extendedKeyUsage="2.16.840.1.114513.29.37", # Optional. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
+                             extendedKeyUsage="2.16.840.1.114513.29.37", # Optional in ASN1 but explanation in spec says it MUST be present. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
                              # cRLDistribPointURI=u'www.certificatebegone.com/' # Optional
                              )
     import hashlib
