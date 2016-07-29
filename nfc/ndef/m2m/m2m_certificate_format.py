@@ -32,13 +32,13 @@ class ChoiceCouldMatchMixin(object):  # is actually univ.Choice but that of cour
         """Check whether other could be a match to self.
         The other lost the field names after decoding, so we simply check all the field self might have and return the field names that matches.
         If there is no matching value, return None"""
-        names = [component_type.getName() for component_type in self.componentType]
-        content_map = {comp: self[comp] for comp in names}
-        key_values = [(key, val) for key, val in content_map.items() if val]
-        if key_values:
-            key, value = key_values[0]
+        choices = [component_type.getName() for component_type in self.componentType]
+        choice_value_map = {choice: self[choice] for choice in choices}
+        choice_values = [(choice, val) for choice, val in choice_value_map.items() if val]
+        if choice_values:
+            choice, value = choice_values[0]
             if value == other:
-                return key
+                return choice
             else:
                 return None
 
