@@ -21,6 +21,7 @@ http://www.secg.org/SEC1-Ver-1.0.pdf"""
 
 from pyasn1.type import univ, char, namedtype, namedval, tag, constraint, useful
 from pyasn1.codec.der import encoder as der_encoder
+from pyasn1.codec.der import decoder as der_decoder
 import binascii
 import enum
 import base64
@@ -496,9 +497,6 @@ def verify_signature(signed_bytes, signature, public_key_path='public.pem'):
     else:
         raise OSError(err)
 
-def certificate_to_m2m_der(certificate_path):
-    pass
-
 def m2m_certificate_to_file(certificate, certificate_path):
     with open(certificate_path, 'wb+') as cert_file:
         cert_file.write(b'------BEGIN CERTIFICATE------'+b'\n')
@@ -512,6 +510,10 @@ def m2m_bytes_from_file(certificate_path):
         content = b''.join(content_lines)
         return base64.decodebytes(content)
 
+def m2m_certificate_from_file(certificate_path):
+    b = m2m_bytes_from_file(certificate_path)
+    return der_decoder.decode(b)[0]
+
 def sign_certificate(tbs_certificate, private_key_path='private.pem', as_bytes=False):
     tbs_cert_bytes = der_encoder.encode(tbs_certificate)
     signature_bytes = generate_signature(tbs_cert_bytes, private_key_path=private_key_path)
@@ -523,6 +525,7 @@ def sign_certificate(tbs_certificate, private_key_path='private.pem', as_bytes=F
         return der_encoder.encode(certificate)
     else:
         return certificate
+
 
 
 DUMMY_SUBJECT = Name.new(AttributeValue(country='US'),

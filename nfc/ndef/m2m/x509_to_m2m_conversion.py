@@ -136,7 +136,7 @@ class M2mConverter(object):
         m2m_issuer = M2mConverter.x509_name_to_m2m_name(x509_cert.issuer)
         m2m_subject = M2mConverter.x509_name_to_m2m_name(x509_cert.subject)
 
-        m2m_public_key = x509_cert.public_key().public_bytes(Encoding.DER, PublicFormat.SubjectPublicKeyInfo)
+        m2m_public_key = x509_cert.public_key().public_bytes(Encoding.DER, PublicFormat.SubjectPublicKeyInfo) # TODO: is SubjectPublicKeyInfo the correct format?
 
         ca_algo = M2mConverter.x509_algo_to_m2m_cAAlgorithm(x509_cert)
 
