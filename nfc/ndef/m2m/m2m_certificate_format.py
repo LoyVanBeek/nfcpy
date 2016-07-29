@@ -66,31 +66,45 @@ class AttributeValue(univ.Choice):
             raise ValueError("AttributeValue is a Choice, supply only 1 argument")
 
         if country:
-            self['country'] = char.PrintableString(country).subtype(subtypeSpec=constraint.ValueSizeConstraint(2, 2))
+            self['country'] = char.PrintableString(country)#.subtype(subtypeSpec=constraint.ValueSizeConstraint(2, 2))
         if organization:
-            self['organization'] = char.UTF8String(organization).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
+            self['organization'] = char.UTF8String(organization)#.subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if organizationalUnit:
-            self['organizationalUnit'] = char.UTF8String(organizationalUnit).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
+            self['organizationalUnit'] = char.UTF8String(organizationalUnit)#.subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if distinguishedNameQualifier:
-            self['distinguishedNameQualifier'] = char.PrintableString(distinguishedNameQualifier).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
+            self['distinguishedNameQualifier'] = char.PrintableString(distinguishedNameQualifier)#.subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if stateOrProvince:
-            self['stateOrProvince'] = char.UTF8String(stateOrProvince).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4))
+            self['stateOrProvince'] = char.UTF8String(stateOrProvince)#.subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4))
         if locality:
-            self['locality'] = char.UTF8String(locality).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
+            self['locality'] = char.UTF8String(locality)#.subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if commonName:
-            self['commonName'] = char.UTF8String(commonName).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
+            self['commonName'] = char.UTF8String(commonName)#.subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if serialNumber:
-            self['serialNumber'] = char.PrintableString(serialNumber).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
+            self['serialNumber'] = char.PrintableString(serialNumber)#.subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if domainComponent:
-            self['domainComponent'] = char.IA5String(domainComponent).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
+            self['domainComponent'] = char.IA5String(domainComponent)#.subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))
         if registeredId:
             self['registeredId'] = univ.ObjectIdentifier(registeredId)
         if octetsName:
-            self['octetsName'] = univ.OctetString(octetsName).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 8))
+            self['octetsName'] = univ.OctetString(octetsName)#.subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 8))
 
     @staticmethod
     def new(*args, **kwargs):
         return AttributeValue(*args, **kwargs)
+
+    def could_match(self, other):
+        """Check whether other could be a match to self.
+        The other lost the field names after decoding, so we simply check all the field self might have and return the field names that matches.
+        If there is no matching value, return None"""
+        names = [component_type.getName() for component_type in self.componentType]
+        content_map = {comp: self[comp] for comp in names}
+        key_values = [(key, val) for key, val in content_map.items() if val]
+        if key_values:
+            key, value = key_values[0]
+            if value == other:
+                return key
+            else:
+                return None
 
 
 class Name(univ.SequenceOf):
