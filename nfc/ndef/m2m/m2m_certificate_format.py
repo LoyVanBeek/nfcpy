@@ -27,7 +27,28 @@ import base64
 import subprocess
 
 
-class AttributeValue(univ.Choice):
+class ChoiceCouldMatchMixin(object):  # is actually univ.Choice but that of course messed with Method Resolution Order
+    def could_match(self, other):
+        """Check whether other could be a match to self.
+        The other lost the field names after decoding, so we simply check all the field self might have and return the field names that matches.
+        If there is no matching value, return None"""
+        names = [component_type.getName() for component_type in self.componentType]
+        content_map = {comp: self[comp] for comp in names}
+        key_values = [(key, val) for key, val in content_map.items() if val]
+        if key_values:
+            key, value = key_values[0]
+            if value == other:
+                return key
+            else:
+                return None
+
+class SequenceCouldmatchMixin(object):  # is actually univ.Sequence but that of course messed with Method Resolution Order
+    def could_match(self, other):
+        """Check that, in order, all the elements could match the other sequence"""
+        return all(a.could_match(b) for a, b in zip(self, other))
+
+
+class AttributeValue(univ.Choice, ChoiceCouldMatchMixin):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('country',
                             char.PrintableString()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(2, 2))),
@@ -92,22 +113,8 @@ class AttributeValue(univ.Choice):
     def new(*args, **kwargs):
         return AttributeValue(*args, **kwargs)
 
-    def could_match(self, other):
-        """Check whether other could be a match to self.
-        The other lost the field names after decoding, so we simply check all the field self might have and return the field names that matches.
-        If there is no matching value, return None"""
-        names = [component_type.getName() for component_type in self.componentType]
-        content_map = {comp: self[comp] for comp in names}
-        key_values = [(key, val) for key, val in content_map.items() if val]
-        if key_values:
-            key, value = key_values[0]
-            if value == other:
-                return key
-            else:
-                return None
 
-
-class Name(univ.SequenceOf):
+class Name(univ.SequenceOf, SequenceCouldmatchMixin):
     componentType = AttributeValue()
     subtypeSpec=constraint.ValueSizeConstraint(1, 4)
 
@@ -125,7 +132,7 @@ class Name(univ.SequenceOf):
         return name
 
 
-class GeneralName(univ.Choice):
+class GeneralName(univ.Choice, ChoiceCouldMatchMixin):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('rfc822Name',
                             char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 128))),
@@ -159,7 +166,7 @@ class GeneralName(univ.Choice):
         return general_name
 
 
-class AuthKeyId(univ.Sequence):
+class AuthKeyId(univ.Sequence, SequenceCouldmatchMixin):
     componentType = namedtype.NamedTypes(
         namedtype.OptionalNamedType('keyIdentifier', univ.OctetString()),
         namedtype.OptionalNamedType('authCertIssuer', GeneralName()),
@@ -185,7 +192,7 @@ class AuthKeyId(univ.Sequence):
         return authKeyId
 
 
-class Extension(univ.Sequence):
+class Extension(univ.Sequence, SequenceCouldmatchMixin):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('extnID', univ.ObjectIdentifier()),
         namedtype.DefaultedNamedType('criticality', univ.Boolean().subtype(value=0)),
@@ -214,7 +221,7 @@ class X509Extensions(univ.SequenceOf):
         return x509exts
 
 
-class TBSCertificate(univ.Sequence):
+class TBSCertificate(univ.Sequence, SequenceCouldmatchMixin):
     componentType = namedtype.NamedTypes(
         namedtype.DefaultedNamedType('version', univ.Integer()),#namedValues=namedval.NamedValues(('v1', 0))).subtype(value='v1')),
         namedtype.NamedType('serialNumber', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20))),
@@ -278,7 +285,7 @@ class TBSCertificate(univ.Sequence):
         return tbs
 
 
-class Certificate(univ.Sequence):
+class Certificate(univ.Sequence, SequenceCouldmatchMixin):
     tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 20))
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('tbsCertificate', TBSCertificate()),
@@ -294,7 +301,7 @@ class Certificate(univ.Sequence):
         return certificate
 
 
-class ECDSA_Sig_Value_Y(univ.Choice): # See [SEC1]
+class ECDSA_Sig_Value_Y(univ.Choice, ChoiceCouldMatchMixin): # See [SEC1]
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('b', univ.Boolean()),
         namedtype.NamedType('f', univ.OctetString()), # FieldElement
@@ -311,7 +318,7 @@ class ECDSA_Sig_Value_Y(univ.Choice): # See [SEC1]
         return y
 
 
-class ECDSA_Sig_Value(univ.Sequence):
+class ECDSA_Sig_Value(univ.Sequence, SequenceCouldmatchMixin):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('r', univ.Integer()),
         namedtype.NamedType('s', univ.Integer()),
@@ -334,7 +341,7 @@ class ECDSA_Sig_Value(univ.Sequence):
         return sigval
 
 
-class ECDSA_Full_R(univ.Sequence):
+class ECDSA_Full_R(univ.Sequence, SequenceCouldmatchMixin):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('r', univ.OctetString()), #ECPoint as defined in section 2.3.3 of [SEC1]
         namedtype.NamedType('s', univ.Integer())
@@ -349,7 +356,7 @@ class ECDSA_Full_R(univ.Sequence):
         return full_r
 
 
-class ECDSA_Signature(univ.Choice):
+class ECDSA_Signature(univ.Choice, ChoiceCouldMatchMixin):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('two-ints-plus', ECDSA_Sig_Value),
         namedtype.NamedType('point-int', ECDSA_Full_R),
@@ -369,7 +376,7 @@ class ECDSA_Signature(univ.Choice):
 class RSA_Signature(univ.OctetString): pass
 
 
-class RSAPublicKey(univ.Sequence):
+class RSAPublicKey(univ.Sequence, SequenceCouldmatchMixin):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('n', univ.Integer()),
         namedtype.NamedType('e', univ.Integer())

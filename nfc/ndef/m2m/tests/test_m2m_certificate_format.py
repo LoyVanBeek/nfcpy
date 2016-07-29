@@ -55,6 +55,8 @@ class TestName(unittest.TestCase):
         self.assertEqual(str(orig_name[2]['locality']),     str(decoded_name[2]))
         # self.assertEqual(orig_name, decoded_name) # Not possible, because the label of the value is lost
 
+        self.assertTrue(orig_name.could_match(decoded_name))
+
 
 class TestGeneralName(unittest.TestCase):
     def test_rfc822Name(self):
@@ -64,11 +66,15 @@ class TestGeneralName(unittest.TestCase):
         # import ipdb; ipdb.set_trace()
         self.assertEqual(str(orig_name['rfc822Name']), str(decoded_name))
 
+        self.assertTrue(orig_name.could_match(decoded_name))
+
     def test_dNSName(self):
         orig_name = m2m.GeneralName.new(dNSName="blablablablabla")
         encoded_name = der_encoder.encode(orig_name)
         decoded_name = der_decoder.decode(encoded_name)[0]
         self.assertEqual(str(orig_name['dNSName']),  str(decoded_name))
+
+        self.assertTrue(orig_name.could_match(decoded_name))
 
     def test_directoryName(self):
         dirname = m2m.Name.new(  m2m.AttributeValue(country='US'),
@@ -80,11 +86,15 @@ class TestGeneralName(unittest.TestCase):
         decoded_name = der_decoder.decode(encoded_name)[0]
         self.assertEqual(orig_name, decoded_name)
 
+        self.assertTrue(orig_name.could_match(decoded_name))
+
     def test_uniformResourceIdentifier(self):
         orig_name = m2m.GeneralName.new(uniformResourceIdentifier="blabla.com")
         encoded_name = der_encoder.encode(orig_name)
         decoded_name = der_decoder.decode(encoded_name)[0]
         self.assertEqual(orig_name, decoded_name)
+
+        self.assertTrue(orig_name.could_match(decoded_name))
 
     def test_iPAddress(self):
         orig_name = m2m.GeneralName.new(iPAddress=bytes([192, 168, 1, 1]))
@@ -92,11 +102,15 @@ class TestGeneralName(unittest.TestCase):
         decoded_name = der_decoder.decode(encoded_name)[0]
         self.assertEqual(orig_name, decoded_name)
 
+        self.assertTrue(orig_name.could_match(decoded_name))
+
     def test_registeredID(self):
         orig_name = m2m.GeneralName.new(registeredID=univ.ObjectIdentifier("1.2.840.10045.3.1.7"))
         encoded_name = der_encoder.encode(orig_name)
         decoded_name = der_decoder.decode(encoded_name)[0]
         self.assertEqual(orig_name, decoded_name)
+
+        self.assertTrue(orig_name.could_match(decoded_name))
 
 
 class TestAuthKeyID(unittest.TestCase):
@@ -110,6 +124,7 @@ class TestAuthKeyID(unittest.TestCase):
         encoded_key = der_encoder.encode(orig_key)
         decoded_key = der_decoder.decode(encoded_key)[0]
         self.assertEqual(orig_key, decoded_key)
+        # self.assertTrue(orig_key.could_match(decoded_key))
 
 
 class TestTbsCertificate(unittest.TestCase):
