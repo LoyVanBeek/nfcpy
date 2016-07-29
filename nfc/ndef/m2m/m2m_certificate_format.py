@@ -30,26 +30,26 @@ import subprocess
 class AttributeValue(univ.Choice):
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('country',
-                            char.PrintableString().subtype(subtypeSpec=constraint.ValueSizeConstraint(2, 2))),
+                            char.PrintableString()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(2, 2))),
         namedtype.NamedType('organization',
-                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
+                            char.UTF8String()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('organizationalUnit',
-                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
+                            char.UTF8String()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('distinguishedNameQualifier',
-                            char.PrintableString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
+                            char.PrintableString()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('stateOrProvince',
-                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4))),
+                            char.UTF8String()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 4))),
         namedtype.NamedType('locality',
-                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
+                            char.UTF8String()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('commonName',
-                            char.UTF8String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
+                            char.UTF8String()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('serialNumber',
-                            char.PrintableString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
+                            char.PrintableString()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('domainComponent',
-                            char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
+                            char.IA5String()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 32))),
         namedtype.NamedType('registeredId', univ.ObjectIdentifier()),
         namedtype.NamedType('octetsName',
-                            univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 8)))
+                            univ.OctetString()),  # .subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 8)))
     )
 
     def __init__(self, country=None, 
@@ -202,7 +202,7 @@ class X509Extensions(univ.SequenceOf):
 
 class TBSCertificate(univ.Sequence):
     componentType = namedtype.NamedTypes(
-        namedtype.DefaultedNamedType('version', univ.Integer(namedValues=namedval.NamedValues(('v1', 0))).subtype(value='v1')),
+        namedtype.DefaultedNamedType('version', univ.Integer()),#namedValues=namedval.NamedValues(('v1', 0))).subtype(value='v1')),
         namedtype.NamedType('serialNumber', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20))),
         namedtype.OptionalNamedType('cAAlgorithm', univ.ObjectIdentifier()),
         namedtype.OptionalNamedType('cAAlgParams', univ.OctetString()),
@@ -239,7 +239,7 @@ class TBSCertificate(univ.Sequence):
             x509extensions=None):
         tbs = TBSCertificate()
 
-        tbs['version'] = univ.Integer(value=version, namedValues=namedval.NamedValues(('v1', 0))).subtype(value='v1')
+        tbs['version'] = univ.Integer(value=version) #, namedValues=namedval.NamedValues(('v1', 0))).subtype(value='v1')
         tbs['serialNumber'] = univ.OctetString(serialNumber).subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20))
         if cAAlgorithm: tbs['cAAlgorithm'] = univ.ObjectIdentifier(cAAlgorithm)
         if cAAlgParams: tbs['cAAlgParams'] = univ.OctetString(cAAlgParams)
