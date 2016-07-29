@@ -512,19 +512,12 @@ def m2m_bytes_from_file(certificate_path):
         content = b''.join(content_lines)
         return base64.decodebytes(content)
 
-
-def self_sign_certificate(tbs_certificate, private_key_path='private.pem', public_key_path='public.pem', as_bytes=False):
-    with open(public_key_path, 'rb') as public_key_file:
-        public_key_base64 = public_key_file.read()
-        public_key_bytes = base64.decodebytes(public_key_base64)
-
-        tbs_certificate['pubKey'] = public_key_bytes
-
-    tbs_cert_bytes = der_encoder.encode(tbs)
+def sign_certificate(tbs_certificate, private_key_path='private.pem', as_bytes=False):
+    tbs_cert_bytes = der_encoder.encode(tbs_certificate)
     signature_bytes = generate_signature(tbs_cert_bytes, private_key_path=private_key_path)
 
     cACalcValue = univ.OctetString(value=signature_bytes)
-    certificate = Certificate.new(tbs, cACalcValue)
+    certificate = Certificate.new(tbs_certificate, cACalcValue)
 
     if as_bytes:
         return der_encoder.encode(certificate)
@@ -674,12 +667,12 @@ if __name__ == '__main__':
 
     print(hashlib.sha224(der_encoder.encode(tbs)).hexdigest())
 
-    certificate = self_sign_certificate(tbs, private_key_path='private.pem', public_key_path='public.pem')
+    certificate = sign_certificate(tbs, private_key_path='private.pem')
 
     print(certificate.prettyPrint())
     print(binascii.hexlify(der_encoder.encode(certificate)))
     print(len(der_encoder.encode(certificate)))
 
-    m2m_certificate_to_file(certificate, 'm2m_certificate.der')
+    m2m_certificate_to_file(certificate, 'm2m_certificate.pem')
 
 

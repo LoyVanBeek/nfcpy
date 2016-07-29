@@ -164,13 +164,35 @@ class M2mConverter(object):
             m2m_tbs = M2mConverter.x509_to_m2m_tbs(cert)
 
             with open(m2m_path, 'wb') as m2m_file:
+                m2m_file.write(b'------BEGIN CERTIFICATE REQUEST------' + b'\n')
+                m2m_file.write(base64.encodebytes(der_encoder.encode(m2m_tbs)))
+                m2m_file.write(b'------BEGIN CERTIFICATE REQUEST------')
+
+    @staticmethod
+    def x509_pem_to_m2m_pem(x509_path, m2m_path, private_key_path):
+        with open(x509_path, 'rb') as cert_file:
+            pem_data = cert_file.read()
+            x509_cert = x509.load_pem_x509_certificate(pem_data, default_backend())
+            m2m_tbs = M2mConverter.x509_to_m2m_tbs(x509_cert)
+            m2m.sign_certificate(m2m_tbs, private_key_path)
+
+            with open(m2m_path, 'wb') as m2m_file:
                 m2m_file.write(b'------BEGIN CERTIFICATE------' + b'\n')
                 m2m_file.write(base64.encodebytes(der_encoder.encode(m2m_tbs)))
                 m2m_file.write(b'------END CERTIFICATE------')
 
 if __name__ == "__main__":
     import sys
-    M2mConverter.x509_pem_to_m2m_csr(sys.argv[1], sys.argv[2])
+
+    if len(sys.argv) < 3:
+        print("Usage: x509_to_m2m_conversion.py x509_cert.pem m2m_cert.pem [private_key.pem]"
+              "The [private_key.pem] is used to optionally sign the converted certificate")
+        exit(-1)
+    elif len(sys.argv) == 3:
+        M2mConverter.x509_pem_to_m2m_csr(sys.argv[1], sys.argv[2])
+    elif len(sys.argv) == 4: #Then we have a private key as well
+        M2mConverter.x509_pem_to_m2m_pem(sys.argv[1], sys.argv[2], sys.argv[3])
+
 
 
 
