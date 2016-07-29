@@ -42,10 +42,18 @@ class ChoiceCouldMatchMixin(object):  # is actually univ.Choice but that of cour
             else:
                 return None
 
+
 class SequenceCouldmatchMixin(object):  # is actually univ.Sequence but that of course messed with Method Resolution Order
     def could_match(self, other):
         """Check that, in order, all the elements could match the other sequence"""
-        return all(a.could_match(b) for a, b in zip(self, other))
+        for a, b in zip(self, other):
+            if hasattr(a, 'could_match'): # Only custom elements that use the mixins above have the attribute.
+                if not a.could_match(b):
+                    return False
+            else:  # If they don't have the attribute, then check for normal equality
+                if not a == b:
+                    return False
+        return True
 
 
 class AttributeValue(univ.Choice, ChoiceCouldMatchMixin):

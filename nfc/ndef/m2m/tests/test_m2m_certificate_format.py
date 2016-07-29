@@ -122,9 +122,11 @@ class TestAuthKeyID(unittest.TestCase):
                                         authCertSerialNum=int(987654321).to_bytes(4, byteorder='big'))
 
         encoded_key = der_encoder.encode(orig_key)
-        decoded_key = der_decoder.decode(encoded_key)[0]
+        decoded = der_decoder.decode(encoded_key)
+        decoded_key = decoded[0]
         self.assertEqual(orig_key, decoded_key)
-        # self.assertTrue(orig_key.could_match(decoded_key))
+        # import ipdb; ipdb.set_trace()
+        self.assertTrue(orig_key.could_match(decoded_key))
 
 
 class TestTbsCertificate(unittest.TestCase):
