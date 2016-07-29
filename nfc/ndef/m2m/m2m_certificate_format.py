@@ -255,7 +255,7 @@ class X509Extensions(univ.SequenceOf):
 
 class TBSCertificate(univ.Sequence, SequenceCouldmatchMixin):
     componentType = namedtype.NamedTypes(
-        namedtype.DefaultedNamedType('version', univ.Integer(namedValues=namedval.NamedValues(('v1', 0))).subtype(value='v1')),
+        namedtype.DefaultedNamedType('version', univ.Integer()),
         namedtype.NamedType('serialNumber', univ.OctetString().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, 20))),
         namedtype.OptionalNamedType('cAAlgorithm', univ.ObjectIdentifier()),
         namedtype.OptionalNamedType('cAAlgParams', univ.OctetString()),
