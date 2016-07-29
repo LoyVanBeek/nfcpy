@@ -125,7 +125,6 @@ class TestAuthKeyID(unittest.TestCase):
         decoded = der_decoder.decode(encoded_key)
         decoded_key = decoded[0]
         self.assertEqual(orig_key, decoded_key)
-        # import ipdb; ipdb.set_trace()
         self.assertTrue(orig_key.could_match(decoded_key))
 
 
@@ -173,3 +172,4 @@ class TestTbsCertificate(unittest.TestCase):
         # self.assertEqual(orig_tbs['subject'], decoded_tbs[2])
 
         # self.assertEqual(orig_tbs, decoded_tbs)
+        self.assertTrue(orig_tbs.could_match(decoded_tbs))

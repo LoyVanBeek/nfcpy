@@ -28,7 +28,7 @@ import subprocess
 
 
 class ChoiceCouldMatchMixin(object):  # is actually univ.Choice but that of course messed with Method Resolution Order
-    def could_match(self, other):
+    def could_match(self, other, debug=False):
         """Check whether other could be a match to self.
         The other lost the field names after decoding, so we simply check all the field self might have and return the field names that matches.
         If there is no matching value, return None"""
@@ -38,20 +38,44 @@ class ChoiceCouldMatchMixin(object):  # is actually univ.Choice but that of cour
         if choice_values:
             choice, value = choice_values[0]
             if value == other:
+                if debug: print("a[{choice}] == b == {value}".format(choice=choice, value=value))
                 return choice
             else:
                 return None
 
-
-class SequenceCouldmatchMixin(object):  # is actually univ.Sequence but that of course messed with Method Resolution Order
-    def could_match(self, other):
+class SequenceOfCouldMatchMixin(object):  # is actually univ.Sequence but that of course messed with Method Resolution Order
+    def could_match(self, other, debug=False):
         """Check that, in order, all the elements could match the other sequence"""
         for a, b in zip(self, other):
             if hasattr(a, 'could_match'): # Only custom elements that use the mixins above have the attribute.
-                if not a.could_match(b):
+                if not a.could_match(b, debug=debug):
+                    if debug: print("{a} could not match {b}: {a} !~= {b}".format(a=a, b=b))
                     return False
             else:  # If they don't have the attribute, then check for normal equality
                 if not a == b:
+                    import ipdb; ipdb.set_trace()
+                    if debug: print("{a} does not match {b}: {a} != {b}".format(a=a, b=b))
+                    return False
+        return True
+
+class SequenceCouldmatchMixin(object):  # is actually univ.Sequence but that of course messed with Method Resolution Order
+    def could_match(self, other, debug=False):
+        """Check that, in order, all the elements could match the other sequence"""
+        # import ipdb; ipdb.set_trace()
+        elements = [component_type.getName() for component_type in self.componentType]
+        elements_with_value = [element for element in elements if self[element] != None]
+
+        #for a, b in zip(self, other):
+        for index, element in enumerate(elements_with_value):
+            a, b = self[element], other[index]
+            if hasattr(a, 'could_match'): # Only custom elements that use the mixins above have the attribute.
+                if not a.could_match(b, debug=debug):
+                    if debug: print("{a} could not match {b}: {a} !~= {b}".format(a=a, b=b))
+                    return False
+            else:  # If they don't have the attribute, then check for normal equality
+                if not a == b:
+                    import ipdb; ipdb.set_trace()
+                    if debug: print("{a} does not match {b}: {a} != {b}".format(a=a, b=b))
                     return False
         return True
 
@@ -122,7 +146,7 @@ class AttributeValue(univ.Choice, ChoiceCouldMatchMixin):
         return AttributeValue(*args, **kwargs)
 
 
-class Name(univ.SequenceOf, SequenceCouldmatchMixin):
+class Name(univ.SequenceOf, SequenceOfCouldMatchMixin):
     componentType = AttributeValue()
     subtypeSpec=constraint.ValueSizeConstraint(1, 4)
 
