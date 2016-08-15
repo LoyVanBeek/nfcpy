@@ -514,6 +514,9 @@ def m2m_certificate_from_file(certificate_path):
     b = m2m_bytes_from_file(certificate_path)
     return der_decoder.decode(b)[0]
 
+def m2m_certificate_from_bytes(byte_sequence):
+    return der_decoder.decode(byte_sequence)[0]
+
 def sign_certificate(tbs_certificate, private_key_path='private.pem', as_bytes=False):
     tbs_cert_bytes = der_encoder.encode(tbs_certificate)
     signature_bytes = generate_signature(tbs_cert_bytes, private_key_path=private_key_path)
