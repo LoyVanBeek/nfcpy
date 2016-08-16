@@ -514,14 +514,16 @@ def asn1_to_bytes(element):
     encoded_1 = der_encoder.encode(element)
     decoded_2 = der_decoder.decode(encoded_1)
     encoded_2 = der_encoder.encode(decoded_2[0])
-    print(len(encoded_2))
 
     return encoded_2
 
-def m2m_certificate_to_file(certificate, certificate_path):
+def m2m_certificate_to_file(certificate, certificate_path, debug=False):
     with open(certificate_path, 'wb+') as cert_file:
         cert_file.write(b'------BEGIN CERTIFICATE------'+b'\n')
-        cert_file.write(base64.encodebytes(der_encoder.encode(certificate)))
+        encoded = der_encoder.encode(certificate)
+        if debug:
+            print("Writing to file: {}".format(binascii.hexlify(encoded)))
+        cert_file.write(base64.encodebytes(encoded))
         cert_file.write(b'------END CERTIFICATE------')
 
 def m2m_bytes_from_file(certificate_path):
@@ -539,7 +541,7 @@ def m2m_certificate_from_bytes(byte_sequence):
     return der_decoder.decode(byte_sequence)[0]
 
 def sign_certificate(tbs_certificate, private_key_path='private.pem', as_bytes=False):
-    tbs_cert_bytes = der_encoder.encode(tbs_certificate)
+    tbs_cert_bytes = asn1_to_bytes(tbs_certificate)
     signature_bytes = generate_signature(tbs_cert_bytes, private_key_path=private_key_path)
 
     cACalcValue = univ.OctetString(value=signature_bytes)
@@ -711,20 +713,21 @@ if __name__ == '__main__':
 
     #From the certificate, we take the last element's octets/bytes, which is the signature (the certificate Authority Calculated value?)
     cACalcValue = certificate[-1].asOctets()
-    encoded_tbs = der_encoder.encode(tbs)
+    encoded_tbs = asn1_to_bytes(tbs) #der_encoder.encode(tbs)
 
     # To verify the signature, the to-be-signed part is taken, converted to bytes verified using the public key.
     # This is OK
     print("Before: Verification: {ok}".format(ok=verify_signature(encoded_tbs, cACalcValue, "public.pem")))
 
     # print(certificate.prettyPrint())
-    print(binascii.hexlify(der_encoder.encode(certificate)))
+    print("ToBeSigned: {}".format(binascii.hexlify(encoded_tbs)))
 
     # The full certificate (with to-be-signed and the signature) is saved to a file. The signature is stored in the file, for sure.
-    m2m_certificate_to_file(certificate, 'm2m_certificate.pem')
+    m2m_certificate_to_file(certificate, 'm2m_certificate.pem', debug=True)
+    # The file starts with a APPLICATION 20 tag when viewed with https://lapo.it/asn1js/ and consists of a 2-element sequence
 
     # When we deserialize the certificate from the file, some part is lost: the signature.
-    # Only the to-be-signed part is returned by the decoder somehow.
+    # Only the first element of the sequence is returned by the decoder somehow.
     m2m_cert = m2m_certificate_from_file('m2m_certificate.pem')
 
     # Now we read/decode the encoded certificate file and extract the signature from it to check whether the signature still matches
@@ -735,15 +738,32 @@ if __name__ == '__main__':
     print("cACalcValue == sig_from_file: {}".format(cACalcValue == sig_from_file)) # True!
 
     # To check that the decoded signature is correct, we need to convert the decoded to-be-signed part to bytes and use those in the verification.
-    tbs_bytes = der_encoder.encode(m2m_cert)
+    decoded_cert_bytes = asn1_to_bytes(m2m_cert)#der_encoder.encode(m2m_cert)
 
-    # tbs_bytes = tbs_bytes[4:]
+    # decoded_cert_bytes = decoded_cert_bytes[4:]
     # encoded_tbs = encoded_tbs[1:]
 
-    after_verify_ok = verify_signature(tbs_bytes, sig_from_file, "public.pem")
+    after_verify_ok = verify_signature(decoded_cert_bytes, sig_from_file, "public.pem")
     print("After: Verification: {ok}".format(ok=after_verify_ok))
-    # The verification however fails, because tbs_bytes and encoded_tbs are slightly different.
-    # tbs_bytes starts with a APPLICATION 20 tag when using https://lapo.it/asn1js/
+    # The verification however fails, because decoded_cert_bytes and encoded_tbs are slightly different.
+    # How are they different? decoded_cert_bytes also starts with the APPLICATION 20 tag, but the sequence within simply has oly 1 element.
+    # Can we extract only the ToBeSigned-part of the decoded_cert_bytes to check the signature with?
+    # Another weird effect is that m2m_cert (when viewed with https://lapo.it/asn1js/ look like this:
+    # Application 20(1 elem)
+    #   SEQUENCE(12 elem)
+    #       INTEGER 0
+    #       OCTET STRING(20 byte) 00000000000000000000000000000000075BCD15
+    #       OBJECT IDENTIFIER 1.2.840.10045.4.3.2
+    #       OCTET STRING(1 elem) ...
+    #
+    # So, you would expect that m2m_cert[0] would be the SEQUENCE(12 elem) and thus m2m_cert[0][0] would be the INTEGER 0.
+    # Then, we would encode the SEQUENCE(12 elem) and check it with the signature.
+    #
+    # HOWEVER:
+    # m2m_cert[0] is the INTEGER 0 already so it looks like the ToBeSigned stuff before serializing to file; it has the same content
+    # But, because of the APPLICATION 20 tag, it has different bytes and thus the signature fails. 
+
+    print("Cert. from file: {}".format(binascii.hexlify(decoded_cert_bytes)))
 
     def bindiff(A, B):
         for i, (a,b) in enumerate(zip(A, B)):
@@ -751,10 +771,10 @@ if __name__ == '__main__':
                 print("{}\t: {}\t!=\t{}".format(i, a, b))
 
     if not after_verify_ok:
-        print("encoded_tbs == tbs_bytes: {}".format(encoded_tbs == tbs_bytes))
-        # bindiff(encoded_tbs, tbs_bytes)
-        print("encoded_tbs is embedded in tbs_bytes: {}".format(binascii.hexlify(tbs_bytes).find(binascii.hexlify(encoded_tbs)) >= 0))
-        # So, where does tbs_bytes get that extra padding (3 bytes, saying 7481ea --> Application 20) from?
+        print("encoded_tbs == decoded_cert_bytes: {}".format(encoded_tbs == decoded_cert_bytes))
+        # bindiff(encoded_tbs, decoded_cert_bytes)
+        print("encoded_tbs is embedded in decoded_cert_bytes: {}".format(binascii.hexlify(decoded_cert_bytes).find(binascii.hexlify(encoded_tbs)) >= 0))
+        # So, where does decoded_cert_bytes get that extra padding (3 bytes, saying 7481ea --> Application 20) from?
 
     decoded_1 = certificate
     encoded_1 = der_encoder.encode(decoded_1)
