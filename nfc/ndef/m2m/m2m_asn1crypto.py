@@ -191,26 +191,26 @@ if __name__ == "__main__":
     tbs['serialNumber'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
     tbs['cAAlgorithm'] = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
     tbs['cAAlgParams'] = OctetString(value=bytes([0,1,2,3,4,5,6,7,8,9]))
-    tbs['issuer'] = issuer
+    # tbs['issuer'] = issuer
     tbs['validFrom'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
     tbs['validDuration'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    tbs['subject'] = subject
+    # tbs['subject'] = subject
     tbs['pKAlgorithm'] = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
     tbs['pKAlgParams'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
     tbs['pubKey'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    tbs['authKeyId'] = AuthkeyID()
+    # tbs['authKeyId'] = AuthkeyID()
     tbs['subjKeyId'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
     tbs['keyUsage'] = OctetString(value=int(0).to_bytes(1, byteorder='big'))
     #tbs['basicConstraints'] =  # Omit if end-entity cert
     tbs['certificatePolicy'] = "2.5.29.3" #ObjectIdentifier("2.5.29.3")
-    tbs['subjectAltName'] = subjectAlternativeName
-    tbs['issuerAltName'] = issuerAlternativeName
+    # tbs['subjectAltName'] = subjectAlternativeName
+    # tbs['issuerAltName'] = issuerAlternativeName
     tbs['extendedKeyUsage'] = "2.5.29.37" #ObjectIdentifier("2.5.29.37") #Any key purpose
     #tbs['authInfoAccessOCSP'] =
     tbs['cRLDistribPointURI'] =  IA5String(u'www.ultimaker.com/')
     #tbs['x509extensions'] =
 
-    dummy = Certificate(value={'cACalcValue': ECDSA_Signature(value={'two-ints-plus': ECDSA_Sig_Value(value={'r':123456789, 's':987654321})}),
+    dummy = Certificate(value={'cACalcValue': OctetString(value=int(987654321).to_bytes(10, byteorder='big')),
                                'tbsCertificate':tbs})
 
     dumped = dummy.dump()
