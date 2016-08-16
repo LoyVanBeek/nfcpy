@@ -761,7 +761,7 @@ if __name__ == '__main__':
     #
     # HOWEVER:
     # m2m_cert[0] is the INTEGER 0 already so it looks like the ToBeSigned stuff before serializing to file; it has the same content
-    # But, because of the APPLICATION 20 tag, it has different bytes and thus the signature fails. 
+    # But, because of the APPLICATION 20 tag, it has different bytes and thus the signature fails.
 
     print("Cert. from file: {}".format(binascii.hexlify(decoded_cert_bytes)))
 
