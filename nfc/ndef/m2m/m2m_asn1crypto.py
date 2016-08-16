@@ -172,7 +172,7 @@ if __name__ == "__main__":
     issuer[0] = AttributeValue(value={'country':PrintableString(value='US')})
     issuer[1] = AttributeValue(value={'organization':UTF8String(value='Big CAhuna corporation')})
     issuer[2] = AttributeValue(value={'locality':UTF8String(value='San Fransisco')})
-    issuer[3] = AttributeValue(value={'serialNumber':PrintableString(value='987654321')})
+    # issuer[3] = AttributeValue(value={'serialNumber':PrintableString(value='987654321')})
 
     issuerAlternativeName = GeneralName(value=issuer)
 
@@ -180,13 +180,17 @@ if __name__ == "__main__":
     subject[0] = AttributeValue(value={'country':PrintableString(value='US')})
     subject[1] = AttributeValue(value={'organization':UTF8String(value='ACME Corporation')})
     subject[2] = AttributeValue(value={'locality':UTF8String(value='Fairfield')})
-    subject[3] = AttributeValue(value={'serialNumber':PrintableString(value='123456789')})
+    # subject[3] = AttributeValue(value={'serialNumber':PrintableString(value='123456789')})
 
     subjectAlternativeName = GeneralName(value=subject)
 
-    # import pudb; pudb.set_trace()
-    # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:3022 # 1264
-    tbs = TBSCertificate()
+    us = PrintableString(value='US')
+    country = AttributeValue(value={'country': us})
+    import ipdb; ipdb.set_trace()
+    # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:3373
+    name2 = Name(value=[country])
+
+    tbs = TBSCertificate(value={'subject':name2})
     tbs['version'] = 0
     tbs['serialNumber'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
     tbs['cAAlgorithm'] = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
@@ -207,7 +211,7 @@ if __name__ == "__main__":
     # tbs['issuerAltName'] = issuerAlternativeName
     tbs['extendedKeyUsage'] = "2.5.29.37" #ObjectIdentifier("2.5.29.37") #Any key purpose
     #tbs['authInfoAccessOCSP'] =
-    tbs['cRLDistribPointURI'] =  IA5String(u'www.ultimaker.com/')
+    tbs['cRLDistribPointURI'] =  IA5String(u'www.acme.com/')
     #tbs['x509extensions'] =
 
     dummy = Certificate(value={'cACalcValue': OctetString(value=int(987654321).to_bytes(10, byteorder='big')),
@@ -217,3 +221,8 @@ if __name__ == "__main__":
     hex = hexlify(dumped)
     print(hex)
     print(len(hex))
+
+    decoded = Certificate.load(dumped)
+    assert decoded.dump() == dumped
+    assert len(dummy.children) == 2
+    assert len(decoded.children) == 2
