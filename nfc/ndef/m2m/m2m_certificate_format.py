@@ -319,7 +319,18 @@ class TBSCertificate(univ.Sequence, SequenceCouldmatchMixin):
 
 
 class Certificate(univ.Sequence, SequenceCouldmatchMixin):
+    # If this line is included, decoding its bytes only returns the tbsCertificate.
+    # When this line is outcommented, decoding gives the full structure.
+    # NOPE, it doesn't:
+    # Traceback (most recent call last):
+    #   File "./m2m_certificate_format.py", line 725, in <module>
+    #     decoded_sig = der_decoder.decode(signature)[0]
+    #   File "/usr/local/lib/python3.5/dist-packages/pyasn1/codec/ber/decoder.py", line 619, in __call__
+    #     'Short octet stream on tag decoding'
+    # pyasn1.error.SubstrateUnderrunError: Short octet stream on tag decoding
+
     tagSet = univ.Sequence.tagSet.tagImplicitly(tag.Tag(tag.tagClassApplication, tag.tagFormatConstructed, 20))
+
     componentType = namedtype.NamedTypes(
         namedtype.NamedType('tbsCertificate', TBSCertificate()),
         namedtype.NamedType('cACalcValue', univ.OctetString())
@@ -497,6 +508,16 @@ def verify_signature(signed_bytes, signature, public_key_path='public.pem'):
     else:
         raise OSError(err)
 
+def asn1_to_bytes(element):
+    # The exact encoding changes over multiple iterations of encode/decode.
+    # It settles and does not change after 1 cycle of doing this, so before returning the bytes, we do this cycle internally.
+    encoded_1 = der_encoder.encode(element)
+    decoded_2 = der_decoder.decode(encoded_1)
+    encoded_2 = der_encoder.encode(decoded_2[0])
+    print(len(encoded_2))
+
+    return encoded_2
+
 def m2m_certificate_to_file(certificate, certificate_path):
     with open(certificate_path, 'wb+') as cert_file:
         cert_file.write(b'------BEGIN CERTIFICATE------'+b'\n')
@@ -528,6 +549,20 @@ def sign_certificate(tbs_certificate, private_key_path='private.pem', as_bytes=F
         return der_encoder.encode(certificate)
     else:
         return certificate
+
+def signature_from_m2m_pem(pem_path):
+    # This function is needed when tagSet is set in the definition of Certificate.
+    cert_bytes = m2m_bytes_from_file(pem_path)
+    decoded = der_decoder.decode(cert_bytes)
+    certificate = decoded[0]
+
+    reencoded = der_encoder.encode(certificate)
+    # Because we only get back thr TBScertificate,
+    # see how long that is (when encoded) and extract the rest of the original bytes.
+    # That encodes the signature.
+    rest = cert_bytes[len(reencoded) + 1:]
+    #     signature_der = der_decoder.decode(rest)[0]
+    return rest
 
 
 
@@ -572,13 +607,13 @@ if __name__ == '__main__':
     der_encoder.encode(subject)
 
     subjectAlternativeName = GeneralName.new(uniformResourceIdentifier="blabla.com")
-    print(subjectAlternativeName.prettyPrint())
+    # print(subjectAlternativeName.prettyPrint())
     der_encoder.encode(subjectAlternativeName)
 
     authkey = AuthKeyId.new(keyIdentifier=int(123456789).to_bytes(4, byteorder='big'),
                             authCertIssuer=subjectAlternativeName,
                             authCertSerialNum=int(123456789).to_bytes(4, byteorder='big'))
-    print(authkey.prettyPrint())
+    # print(authkey.prettyPrint())
     # import pudb; pudb.set_trace()
     # break /usr/local/lib/python3.5/dist-packages/pyasn1/type/univ.py:1124
     # break /usr/local/lib/python3.5/dist-packages/pyasn1/codec/ber/encoder.py:324
@@ -669,16 +704,72 @@ if __name__ == '__main__':
                              extendedKeyUsage="2.16.840.1.114513.29.37", # Optional in ASN1 but explanation in spec says it MUST be present. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
                              # cRLDistribPointURI=u'www.certificatebegone.com/' # Optional
                              )
-    import hashlib
 
-    print(hashlib.sha224(der_encoder.encode(tbs)).hexdigest())
-
+    # A certificate is a combination of 2 things: a to-be-signed part and the signature. Together, it is a signed certificate
+    # The to-be-signed stuff is serialized into bytes and the signature is calculated over those bytes using the private key.
     certificate = sign_certificate(tbs, private_key_path='private.pem')
 
-    print(certificate.prettyPrint())
-    print(binascii.hexlify(der_encoder.encode(certificate)))
-    print(len(der_encoder.encode(certificate)))
+    #From the certificate, we take the last element's octets/bytes, which is the signature (the certificate Authority Calculated value?)
+    cACalcValue = certificate[-1].asOctets()
+    encoded_tbs = der_encoder.encode(tbs)
 
+    # To verify the signature, the to-be-signed part is taken, converted to bytes verified using the public key.
+    # This is OK
+    print("Before: Verification: {ok}".format(ok=verify_signature(encoded_tbs, cACalcValue, "public.pem")))
+
+    # print(certificate.prettyPrint())
+    print(binascii.hexlify(der_encoder.encode(certificate)))
+
+    # The full certificate (with to-be-signed and the signature) is saved to a file. The signature is stored in the file, for sure.
     m2m_certificate_to_file(certificate, 'm2m_certificate.pem')
 
+    # When we deserialize the certificate from the file, some part is lost: the signature.
+    # Only the to-be-signed part is returned by the decoder somehow.
+    m2m_cert = m2m_certificate_from_file('m2m_certificate.pem')
+
+    # Now we read/decode the encoded certificate file and extract the signature from it to check whether the signature still matches
+    # Since m2m_certificate_from_file only returns the to-be-singed part, signature_from_m2m_pem looks for what comes after that in the file and returns the remaining bytes.
+    signature = signature_from_m2m_pem('m2m_certificate.pem')
+    decoded_sig = der_decoder.decode(signature)[0]
+    sig_from_file = decoded_sig.asOctets() # should be equal to cACalcValue
+    print("cACalcValue == sig_from_file: {}".format(cACalcValue == sig_from_file)) # True!
+
+    # To check that the decoded signature is correct, we need to convert the decoded to-be-signed part to bytes and use those in the verification.
+    tbs_bytes = der_encoder.encode(m2m_cert)
+
+    # tbs_bytes = tbs_bytes[4:]
+    # encoded_tbs = encoded_tbs[1:]
+
+    after_verify_ok = verify_signature(tbs_bytes, sig_from_file, "public.pem")
+    print("After: Verification: {ok}".format(ok=after_verify_ok))
+    # The verification however fails, because tbs_bytes and encoded_tbs are slightly different.
+    # tbs_bytes starts with a APPLICATION 20 tag when using https://lapo.it/asn1js/
+
+    def bindiff(A, B):
+        for i, (a,b) in enumerate(zip(A, B)):
+            if not a == b:
+                print("{}\t: {}\t!=\t{}".format(i, a, b))
+
+    if not after_verify_ok:
+        print("encoded_tbs == tbs_bytes: {}".format(encoded_tbs == tbs_bytes))
+        # bindiff(encoded_tbs, tbs_bytes)
+        print("encoded_tbs is embedded in tbs_bytes: {}".format(binascii.hexlify(tbs_bytes).find(binascii.hexlify(encoded_tbs)) >= 0))
+        # So, where does tbs_bytes get that extra padding (3 bytes, saying 7481ea --> Application 20) from?
+
+    decoded_1 = certificate
+    encoded_1 = der_encoder.encode(decoded_1)
+    print("len(encoded_1) = {}".format(len(encoded_1)))
+    decoded_2 = der_decoder.decode(encoded_1)
+    encoded_2 = der_encoder.encode(decoded_2[0])
+    print("len(encoded_2) = {}".format(len(encoded_2)))
+    decoded_3 = der_decoder.decode(encoded_2)
+    encoded_3 = der_encoder.encode(decoded_3[0])
+    print("len(encoded_3) = {}".format(len(encoded_3)))
+
+    print("len(encoded_1)-len(encoded_2) = {}".format(len(encoded_1)-len(encoded_2)))
+    print("len(encoded_2)-len(encoded_3) = {}".format(len(encoded_2)-len(encoded_3)))
+
+    print("print(decoded_1) == print(decoded_2): {}".format(decoded_1.prettyPrint() == decoded_2[0].prettyPrint()))
+    print("print(decoded_2) == print(decoded_3): {}".format(decoded_2[0].prettyPrint() == decoded_3[0].prettyPrint()))
+    # print("print(decoded_3): \n {}".format(decoded_3[0].prettyPrint()))
 
