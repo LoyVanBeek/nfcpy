@@ -15,6 +15,23 @@ September 20, 2000
 Version 1.0
 http://www.secg.org/SEC1-Ver-1.0.pdf"""
 
+
+# coding: utf-8
+from __future__ import unicode_literals, division, absolute_import, print_function
+
+import enum
+import subprocess
+from datetime import datetime, timedelta
+import inspect
+import re
+import sys
+import textwrap
+import time
+
+from asn1crypto import x509, keys, core
+from asn1crypto.util import int_to_bytes, int_from_bytes, timezone
+from oscrypto import asymmetric, util
+
 from asn1crypto.core import Sequence, SequenceOf, ObjectIdentifier, Boolean, OctetString, Choice, \
     PrintableString, UTF8String, IA5String, Integer
 from asn1crypto.x509 import ExtensionId
@@ -127,6 +144,20 @@ class Certificate(Sequence):
     ]
 
 
+class AlgorithmObjectIdentifiers(enum.Enum):
+    ecdsa_with_sha256_secp192r1     = ObjectIdentifier("2.16.840.1.114513.1.0")
+    ecdsa_with_sha256_secp224r1     = ObjectIdentifier("2.16.840.1.114513.1.1")
+    ecdsa_with_sha256_sect233k1     = ObjectIdentifier("2.16.840.1.114513.1.2")
+    ecdsa_with_sha256_sect233r1     = ObjectIdentifier("2.16.840.1.114513.1.3")
+    ecqv_with_sha256_secp192r1      = ObjectIdentifier("2.16.840.1.114513.1.4")
+    ecqv_with_sha256_secp224r1      = ObjectIdentifier("2.16.840.1.114513.1.5")
+    ecqv_with_sha256_sect233k1      = ObjectIdentifier("2.16.840.1.114513.1.6")
+    ecqv_with_sha256_sect233r1      = ObjectIdentifier("2.16.840.1.114513.1.7")
+    rsa_with_sha256                 = ObjectIdentifier("2.16.840.1.114513.1.8")
+    ecdsa_with_sha256_secp256r1     = ObjectIdentifier("2.16.840.1.114513.1.9")
+    ecqv_with_sha256_secp256r1      = ObjectIdentifier("2.16.840.1.114513.1.10")
+
+
 class FieldElement(OctetString): pass # See [SEC1], Clause 2.3.5
 class ECPoint(OctetString): pass # See [SEC1], Clause 2.3.3
 
@@ -167,38 +198,434 @@ class ECDSA_Signature(Choice):
         ('point-int', ECDSA_Full_R),
     ]
 
+if sys.version_info < (3,):
+    int_types = (int, long)  # noqa
+    str_cls = unicode  # noqa
+    byte_cls = str
+else:
+    int_types = (int,)
+    str_cls = str
+    byte_cls = bytes
+
+
+__version__ = '0.14.2'
+__version_info__ = (0, 14, 2)
+
+
+def _writer(func):
+    """
+    Decorator for a custom writer, but a default reader
+    """
+
+    name = func.__name__
+    return property(fget=lambda self: getattr(self, '_%s' % name), fset=func)
+
+class CertificateBuilder(object):
+    _version = 0
+    _serialNumber = None
+    _cAAlgorithm = None
+    _cAAlgParams = None
+    _issuer = None
+    _validFrom = None
+    _validDuration = None
+    _subject = None
+    _pKAlgorithm = None
+    _pKAlgParams = None
+    _pubKey = None
+    _authKeyId = None
+    _subjKeyId = None
+    _keyUsage = None
+    _basicConstraints = None
+    _certificatePolicy = None
+    _subjectAltName = None
+    _issuerAltName = None
+    _extendedKeyUsage = None
+    _authInfoAccessOCSP = None
+    _cRLDistribPointURI = None
+    _x509extensions = None
+
+    _self_signed = False
+
+    _subject_public_key = None # TODO: Only applicable for x509, so remove later
+
+
+    def __init__(self, subject, subject_public_key):
+        """
+        Unless changed, certificates will use SHA-256 for the signature,
+        and will be valid from the moment created for one year. The serial
+        number will be generated from the current time and a random number.
+        :param subject:
+            An asn1crypto.x509.Name object, or a dict - see the docstring
+            for .subject for a list of valid options
+        :param subject_public_key:
+            An asn1crypto.keys.PublicKeyInfo object containing the public key
+            the certificate is being issued for
+        """
+
+        self.subject = subject
+        self.subject_public_key = subject_public_key
+        self.ca = False
+
+        self._hash_algo = 'sha256'
+        self._other_extensions = {}
+
+    @_writer
+    def self_signed(self, value):
+        """
+        A bool - if the certificate should be self-signed.
+        """
+
+        self._self_signed = bool(value)
+
+        if self._self_signed:
+            self._issuer = None
+
+    @_writer
+    def serial_number(self, value):
+        """
+        An int representable in 160 bits or less - must uniquely identify
+        this certificate when combined with the issuer name.
+        """
+
+        if not isinstance(value, int_types):
+            raise TypeError(_pretty_message(
+                '''
+                serial_number must be an integer, not %s
+                ''',
+                _type_name(value)
+            ))
+
+        if value < 0:
+            raise ValueError(_pretty_message(
+                '''
+                serial_number must be a non-negative integer, not %s
+                ''',
+                repr(value)
+            ))
+
+        if len(int_to_bytes(value)) > 20:
+            required_bits = len(int_to_bytes(value)) * 8
+            raise ValueError(_pretty_message(
+                '''
+                serial_number must be an integer that can be represented by a
+                160-bit number, specified requires %s
+                ''',
+                required_bits
+            ))
+
+        self._serial_number = value
+
+    @_writer
+    def ca_algorithm(self, value):
+        self._cAAlgorithm = value
+
+    @_writer
+    def ca_algorithm_parameters(self, value):
+        self._cAAlgParams = value
+
+    @_writer
+    def issuer(self, value):
+        """
+        m2m.Name
+        """
+
+        self._issuer = value
+
+    @_writer
+    def valid_from(self, value):
+        """
+        A datetime.datetime object of when the certificate becomes valid.
+        """
+
+        if not isinstance(value, datetime):
+            raise TypeError(_pretty_message(
+                '''
+                valid_from must be an instance of datetime.datetime, not %s
+                ''',
+                _type_name(value)
+            ))
+
+        self._validFrom = value
+
+    @_writer
+    def valid_duration(self, value):
+        """
+        A datetime.datetime object of when the certificate is last to be
+        considered valid.
+        """
+
+        if not isinstance(value, timedelta):
+            raise TypeError(_pretty_message(
+                '''
+                valid_duration must be an instance of datetime.timedelta, not %s
+                ''',
+                _type_name(value)
+            ))
+
+        self._validDuration = value
+
+    @_writer
+    def subject(self, value):
+        """
+        A Name object
+        """
+
+        is_dict = isinstance(value, dict)
+        if not isinstance(value, x509.Name):
+            raise TypeError(_pretty_message(
+                '''
+                subject must be an instance of m2m.Name,
+                not %s
+                ''',
+                _type_name(value)
+            ))
+
+        self._subject = value
+
+    @_writer
+    def pk_algorithm(self, value):
+        self._pKAlgorithm = value
+
+    @_writer
+    def pk_algorithm_parameters(self, value):
+        self._pKAlgParams = value
+
+    @_writer
+    def public_key(self, value):
+        """
+        A byte sequence containing the public key
+        """
+        if not isinstance(value, bytearray) or isinstance(value, bytes):
+            raise TypeError(_pretty_message(
+                '''
+                public_key must be an sequence of bytes,
+                not %s
+                ''',
+                _type_name(value)
+            ))
+
+        self._pubKey = value
+
+    @_writer
+    def authkey_id(self, value):
+        self._authKeyId = value
+
+    @_writer
+    def subject_key_id(self, value):
+        self._subjKeyId = value
+
+    @_writer
+    def key_usage(self, value):
+        self._keyUsage = value
+
+    @_writer
+    def basic_constraints(self, value):
+        self._basicConstraints = value
+
+    @_writer
+    def certificate_policy(self, value):
+        self._certificatePolicy = value
+
+    @_writer
+    def subject_alternative_name(self, value):
+        self._subjectAltName = value
+
+    @_writer
+    def issuer_alternative_name(self, value):
+        self._issuerAltName = value
+
+    @_writer
+    def extended_key_usage(self, value):
+        self._extendedKeyUsage = value
+
+    @_writer
+    def auth_info_access_ocsp(self, value):
+        self._authInfoAccessOCSP = value
+
+    @_writer
+    def crl_distribution_point_uri(self, value):
+        self._cRLDistribPointURI = value
+
+    @_writer
+    def x509_extensions(self, value):
+        self._x509extensions = value
+
+    def build(self, signing_private_key_path):
+        """
+        Validates the certificate information, constructs the ASN.1 structure
+        and then signs it
+        :param signing_private_key:
+            path to a .pem file with a private key
+        :return:
+            An m2m.Certificate object of the newly signed
+            certificate
+        """
+        if self._self_signed is not True and self._issuer is None:
+            raise ValueError(_pretty_message(
+                '''
+                Certificate must be self-signed, or an issuer must be specified
+                '''
+            ))
+
+        if self._self_signed:
+            self._issuer = self._subject
+
+        if self._serial_number is None:
+            time_part = int_to_bytes(int(time.time()))
+            random_part = util.rand_bytes(4)
+            self._serial_number = int_from_bytes(time_part + random_part)
+
+        if self._validFrom is None:
+            self._validFrom = datetime.now(timezone.utc)
+
+        if self._validDuration is None:
+            self._validDuration = timedelta(days=365)
+
+        tbs_cert = TBSCertificate({
+            'version':self._version,
+            'serialNumber':self._serialNumber,
+            'cAAlgorithm':self._cAAlgorithm,
+            'cAAlgParams':self._cAAlgParams,
+            'issuer':self._issuer,
+            'validFrom':self._validFrom,
+            'validDuration':self._validDuration,
+            'subject':self._subject,
+            'pKAlgorithm':self._pKAlgorithm,
+            'pKAlgParams':self._pKAlgParams,
+            'pubKey':self._pubKey,
+            'authKeyId':self._authKeyId,
+            'subjKeyId':self._subjKeyId,
+            'keyUsage':self._keyUsage,
+            'basicConstraints':self._basicConstraints,
+            'certificatePolicy':self._certificatePolicy,
+            'subjectAltName':self._subjectAltName,
+            'issuerAltName':self._issuerAltName,
+            'extendedKeyUsage':self._extendedKeyUsage,
+            'authInfoAccessOCSP':self._authInfoAccessOCSP,
+            'cRLDistribPointURI':self._cRLDistribPointURI,
+            'x509extensions':self._x509extensions,
+        })
+
+        bytes_to_sign = tbs.dump()
+        signature = generate_signature(bytes_to_sign, signing_private_key_path)
+
+        return Certificate({
+            'tbsCertificate': tbs_cert,
+            'cACalcValue': signature
+        })
+
+def _pretty_message(string, *params):
+    """
+    Takes a multi-line string and does the following:
+     - dedents
+     - converts newlines with text before and after into a single line
+     - strips leading and trailing whitespace
+    :param string:
+        The string to format
+    :param *params:
+        Params to interpolate into the string
+    :return:
+        The formatted string
+    """
+
+    output = textwrap.dedent(string)
+
+    # Unwrap lines, taking into account bulleted lists, ordered lists and
+    # underlines consisting of = signs
+    if output.find('\n') != -1:
+        output = re.sub('(?<=\\S)\n(?=[^ \n\t\\d\\*\\-=])', ' ', output)
+
+    if params:
+        output = output % params
+
+    output = output.strip()
+
+    return output
+
+
+def _type_name(value):
+    """
+    :param value:
+        A value to get the object name of
+    :return:
+        A unicode string of the object name
+    """
+
+    if inspect.isclass(value):
+        cls = value
+    else:
+        cls = value.__class__
+    if cls.__module__ in set(['builtins', '__builtin__']):
+        return cls.__name__
+    return '%s.%s' % (cls.__module__, cls.__name__)
+
+
+def generate_signature(to_be_signed_bytes, private_key_path='private.pem'):
+    """openssl dgst -sha256 -sign private.pem -out signature.der message.txt"""
+    byte_path = "/tmp/to_be_signed.tmp"
+    with open(byte_path, 'wb') as byte_file:
+        byte_file.write(to_be_signed_bytes)
+
+    signature_path = "/tmp/signature.der"
+    proc = subprocess.Popen(['openssl', 'dgst', '-sha256', '-sign', private_key_path, '-out', signature_path, byte_path],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = proc.communicate()
+
+    if not err:
+        with open(signature_path, 'rb') as signature_file:
+            signature = signature_file.read()
+            return signature
+    else:
+        raise OSError(err)
+
+def verify_signature(signed_bytes, signature, public_key_path='public.pem'):
+    """openssl dgst -sha256 -verify public.pem -signature signature.der message.txt"""
+    byte_path = "/tmp/signed.tmp"
+    with open(byte_path, 'wb') as byte_file:
+        byte_file.write(signed_bytes)
+
+    signature_path = "/tmp/signature.der"
+    with open(signature_path, 'wb') as signature_file:
+        signature_file.write(signature)
+
+    proc = subprocess.Popen(['openssl', 'dgst', '-sha256', '-verify', public_key_path, '-signature', signature_path, byte_path],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = proc.communicate()
+    if not err:
+        return out.strip() == b"Verified OK"
+    else:
+        raise OSError(err)
+
 if __name__ == "__main__":
     issuer = Name()
-    issuer[0] = AttributeValue(value={'country':PrintableString(value='US')})
-    issuer[1] = AttributeValue(value={'organization':UTF8String(value='Big CAhuna corporation')})
-    issuer[2] = AttributeValue(value={'locality':UTF8String(value='San Fransisco')})
-    # issuer[3] = AttributeValue(value={'serialNumber':PrintableString(value='987654321')})
+    issuer[0] = AttributeValue(name='country',value=PrintableString(value='US'))
+    issuer[1] = AttributeValue(name='organization', value=UTF8String(value='Big CAhuna corporation'))
+    issuer[2] = AttributeValue(name='locality', value=UTF8String(value='San Fransisco'))
 
-    issuerAlternativeName = GeneralName(value=issuer)
+    issuerAlternativeName = GeneralName(name='directoryName', value=issuer)
 
     subject = Name()
-    subject[0] = AttributeValue(value={'country':PrintableString(value='US')})
-    subject[1] = AttributeValue(value={'organization':UTF8String(value='ACME Corporation')})
-    subject[2] = AttributeValue(value={'locality':UTF8String(value='Fairfield')})
-    # subject[3] = AttributeValue(value={'serialNumber':PrintableString(value='123456789')})
+    subject[0] = AttributeValue(name='country', value=PrintableString(value='US'))
+    subject[1] = AttributeValue(name='organization', value=UTF8String(value='ACME Corporation'))
+    subject[2] = AttributeValue(name='locality', value=UTF8String(value='Fairfield'))
 
     subjectAlternativeName = GeneralName(value=subject)
 
     us = PrintableString(value='US')
-    country = AttributeValue(value={'country': us})
-    import ipdb; ipdb.set_trace()
+    country = AttributeValue(name='country', value= us)
+    # import ipdb; ipdb.set_trace()
     # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:3373
     name2 = Name(value=[country])
 
-    tbs = TBSCertificate(value={'subject':name2})
+    tbs = TBSCertificate()
     tbs['version'] = 0
     tbs['serialNumber'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
     tbs['cAAlgorithm'] = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
     tbs['cAAlgParams'] = OctetString(value=bytes([0,1,2,3,4,5,6,7,8,9]))
-    # tbs['issuer'] = issuer
+    tbs['issuer'] = issuer
     tbs['validFrom'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
     tbs['validDuration'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    # tbs['subject'] = subject
+    tbs['subject'] = subject
     tbs['pKAlgorithm'] = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
     tbs['pKAlgParams'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
     tbs['pubKey'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
