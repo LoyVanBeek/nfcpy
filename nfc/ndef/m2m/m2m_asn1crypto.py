@@ -222,31 +222,29 @@ def _writer(func):
 
 class CertificateBuilder(object):
     _version = 0
-    _serialNumber = None
-    _cAAlgorithm = None
-    _cAAlgParams = None
+    _serial_number = None
+    _ca_algorithm = None
+    _ca_algorithm_parameters = None
     _issuer = None
-    _validFrom = None
-    _validDuration = None
+    _valid_from = None
+    _valid_duration = None
     _subject = None
-    _pKAlgorithm = None
-    _pKAlgParams = None
-    _pubKey = None
-    _authKeyId = None
-    _subjKeyId = None
-    _keyUsage = None
-    _basicConstraints = None
-    _certificatePolicy = None
-    _subjectAltName = None
-    _issuerAltName = None
-    _extendedKeyUsage = None
-    _authInfoAccessOCSP = None
-    _cRLDistribPointURI = None
-    _x509extensions = None
+    _pk_algorithm = None
+    _pk_algorithm_parameters = None
+    _public_key = None
+    _authkey_id = None
+    _subject_key_id = None
+    _key_usage = None
+    _basic_constraints = None
+    _certificate_policy = None
+    _subject_alternative_name = None
+    _issuer_alternative_name = None
+    _extended_key_usage = None
+    _auth_info_access_ocsp = None
+    _crl_distribution_point_uri = None
+    _x509_extensions = None
 
     _self_signed = False
-
-    _subject_public_key = None # TODO: Only applicable for x509, so remove later
 
 
     def __init__(self, subject, subject_public_key):
@@ -263,7 +261,8 @@ class CertificateBuilder(object):
         """
 
         self.subject = subject
-        self.subject_public_key = subject_public_key
+        import ipdb; ipdb.set_trace()
+        self.public_key = subject_public_key
         self.ca = False
 
         self._hash_algo = 'sha256'
@@ -317,11 +316,11 @@ class CertificateBuilder(object):
 
     @_writer
     def ca_algorithm(self, value):
-        self._cAAlgorithm = value
+        self._ca_algorithm = value
 
     @_writer
     def ca_algorithm_parameters(self, value):
-        self._cAAlgParams = value
+        self._ca_algorithm_parameters = value
 
     @_writer
     def issuer(self, value):
@@ -345,7 +344,7 @@ class CertificateBuilder(object):
                 _type_name(value)
             ))
 
-        self._validFrom = value
+        self._valid_from = (value - datetime.utcfromtimestamp(0)).total_seconds().to_bytes(5, byteorder='big')
 
     @_writer
     def valid_duration(self, value):
@@ -362,7 +361,7 @@ class CertificateBuilder(object):
                 _type_name(value)
             ))
 
-        self._validDuration = value
+        self._valid_duration = value.total_seconds().to_bytes(5, byteorder='big')
 
     @_writer
     def subject(self, value):
@@ -371,7 +370,7 @@ class CertificateBuilder(object):
         """
 
         is_dict = isinstance(value, dict)
-        if not isinstance(value, x509.Name):
+        if not isinstance(value, Name):
             raise TypeError(_pretty_message(
                 '''
                 subject must be an instance of m2m.Name,
@@ -384,18 +383,18 @@ class CertificateBuilder(object):
 
     @_writer
     def pk_algorithm(self, value):
-        self._pKAlgorithm = value
+        self._pk_algorithm = value
 
     @_writer
     def pk_algorithm_parameters(self, value):
-        self._pKAlgParams = value
+        self._pk_algorithm_parameters = value
 
     @_writer
     def public_key(self, value):
         """
         A byte sequence containing the public key
         """
-        if not isinstance(value, bytearray) or isinstance(value, bytes):
+        if not isinstance(value, bytearray) and not isinstance(value, bytes):
             raise TypeError(_pretty_message(
                 '''
                 public_key must be an sequence of bytes,
@@ -404,51 +403,51 @@ class CertificateBuilder(object):
                 _type_name(value)
             ))
 
-        self._pubKey = value
+        self._public_key = value
 
     @_writer
     def authkey_id(self, value):
-        self._authKeyId = value
+        self._authkey_id = value
 
     @_writer
     def subject_key_id(self, value):
-        self._subjKeyId = value
+        self._subject_key_id = value
 
     @_writer
     def key_usage(self, value):
-        self._keyUsage = value
+        self._key_usage = value
 
     @_writer
     def basic_constraints(self, value):
-        self._basicConstraints = value
+        self._basic_constraints = value
 
     @_writer
     def certificate_policy(self, value):
-        self._certificatePolicy = value
+        self._certificate_policy = value
 
     @_writer
     def subject_alternative_name(self, value):
-        self._subjectAltName = value
+        self._subject_alternative_name = value
 
     @_writer
     def issuer_alternative_name(self, value):
-        self._issuerAltName = value
+        self._issuer_alternative_name = value
 
     @_writer
     def extended_key_usage(self, value):
-        self._extendedKeyUsage = value
+        self._extended_key_usage = value
 
     @_writer
     def auth_info_access_ocsp(self, value):
-        self._authInfoAccessOCSP = value
+        self._auth_info_access_ocsp = value
 
     @_writer
     def crl_distribution_point_uri(self, value):
-        self._cRLDistribPointURI = value
+        self._crl_distribution_point_uri = value
 
     @_writer
     def x509_extensions(self, value):
-        self._x509extensions = value
+        self._x509_extensions = value
 
     def build(self, signing_private_key_path):
         """
@@ -470,43 +469,43 @@ class CertificateBuilder(object):
         if self._self_signed:
             self._issuer = self._subject
 
-        if self._serial_number is None:
+        if self.serial_number is None:
             time_part = int_to_bytes(int(time.time()))
             random_part = util.rand_bytes(4)
-            self._serial_number = int_from_bytes(time_part + random_part)
+            self.serial_number = int_from_bytes(time_part + random_part)
 
-        if self._validFrom is None:
-            self._validFrom = datetime.now(timezone.utc)
+        properties = {
+            'version':Integer(value=self._version),
+            'serialNumber':OctetString(value=self.serial_number.to_bytes(20, byteorder='big')),
+            'cAAlgorithm':self.ca_algorithm,
+            'cAAlgParams':OctetString(value=self.ca_algorithm_parameters),
+            'issuer':self.issuer,
+            'subject':self.subject,
+            'pKAlgorithm':self.pk_algorithm,
+            'pKAlgParams':OctetString(value=self.pk_algorithm_parameters),
+            'pubKey':OctetString(value=self.public_key),
+            'authKeyId':self.authkey_id,
+            'subjKeyId':OctetString(value=self.subject_key_id),
+            'keyUsage':OctetString(value=self.key_usage),
+            'basicConstraints':Integer(self.basic_constraints),
+            'certificatePolicy':self.certificate_policy,
+            'subjectAltName':self.subject_alternative_name,
+            'issuerAltName':self.issuer_alternative_name,
+            'extendedKeyUsage':self.extended_key_usage,
+            'authInfoAccessOCSP':self.auth_info_access_ocsp,
+            'cRLDistribPointURI':self.crl_distribution_point_uri,
+            'x509extensions':self.x509_extensions,
+        }
 
-        if self._validDuration is None:
-            self._validDuration = timedelta(days=365)
+        if self.valid_from is not None: properties['validFrom'] = self.valid_from
 
-        tbs_cert = TBSCertificate({
-            'version':self._version,
-            'serialNumber':self._serialNumber,
-            'cAAlgorithm':self._cAAlgorithm,
-            'cAAlgParams':self._cAAlgParams,
-            'issuer':self._issuer,
-            'validFrom':self._validFrom,
-            'validDuration':self._validDuration,
-            'subject':self._subject,
-            'pKAlgorithm':self._pKAlgorithm,
-            'pKAlgParams':self._pKAlgParams,
-            'pubKey':self._pubKey,
-            'authKeyId':self._authKeyId,
-            'subjKeyId':self._subjKeyId,
-            'keyUsage':self._keyUsage,
-            'basicConstraints':self._basicConstraints,
-            'certificatePolicy':self._certificatePolicy,
-            'subjectAltName':self._subjectAltName,
-            'issuerAltName':self._issuerAltName,
-            'extendedKeyUsage':self._extendedKeyUsage,
-            'authInfoAccessOCSP':self._authInfoAccessOCSP,
-            'cRLDistribPointURI':self._cRLDistribPointURI,
-            'x509extensions':self._x509extensions,
-        })
+        if self.valid_duration is not None: properties['validDuration'] =  self.valid_duration
 
-        bytes_to_sign = tbs.dump()
+        import ipdb; ipdb.set_trace()
+        # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:2786
+        tbs_cert = TBSCertificate(properties)
+
+        bytes_to_sign = tbs_cert.dump()
         signature = generate_signature(bytes_to_sign, signing_private_key_path)
 
         return Certificate({
@@ -617,32 +616,31 @@ if __name__ == "__main__":
     # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:3373
     name2 = Name(value=[country])
 
-    tbs = TBSCertificate()
-    tbs['version'] = 0
-    tbs['serialNumber'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    tbs['cAAlgorithm'] = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
-    tbs['cAAlgParams'] = OctetString(value=bytes([0,1,2,3,4,5,6,7,8,9]))
-    tbs['issuer'] = issuer
-    tbs['validFrom'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    tbs['validDuration'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    tbs['subject'] = subject
-    tbs['pKAlgorithm'] = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
-    tbs['pKAlgParams'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    tbs['pubKey'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    # tbs['authKeyId'] = AuthkeyID()
-    tbs['subjKeyId'] = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    tbs['keyUsage'] = OctetString(value=int(0).to_bytes(1, byteorder='big'))
-    #tbs['basicConstraints'] =  # Omit if end-entity cert
-    tbs['certificatePolicy'] = "2.5.29.3" #ObjectIdentifier("2.5.29.3")
-    # tbs['subjectAltName'] = subjectAlternativeName
-    # tbs['issuerAltName'] = issuerAlternativeName
-    tbs['extendedKeyUsage'] = "2.5.29.37" #ObjectIdentifier("2.5.29.37") #Any key purpose
-    #tbs['authInfoAccessOCSP'] =
-    tbs['cRLDistribPointURI'] =  IA5String(u'www.acme.com/')
-    #tbs['x509extensions'] =
+    builder = CertificateBuilder(subject, int(123456789).to_bytes(20, byteorder='big'))
 
-    dummy = Certificate(value={'cACalcValue': OctetString(value=int(987654321).to_bytes(10, byteorder='big')),
-                               'tbsCertificate':tbs})
+    builder.version = 0
+    builder.ca_algorithm = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
+    builder.ca_algorithm_parameters = bytes([0,1,2,3,4,5,6,7,8,9])
+    builder.issuer = issuer
+    # builder.valid_from = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
+    # builder.valid_duration = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
+    # builder.subject = subject
+    builder.pk_algorithm = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
+    builder.pk_algorithm_parameters = int(123456789).to_bytes(4, byteorder='big')
+    # builder.pubKey = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
+    builder.authkey_id = AuthkeyID()
+    builder.subject_key_id = int(123456789).to_bytes(4, byteorder='big')
+    builder.key_usage = int(0).to_bytes(1, byteorder='big')
+    # builder.basicConstraints =  # Omit if end-entity cert
+    builder.certificate_policy = "2.5.29.3" #ObjectIdentifier("2.5.29.3")
+    # builder.subjectAltName = subjectAlternativeName
+    # builder.issuerAltName = issuerAlternativeName
+    builder.extended_key_usage = "2.5.29.37" #ObjectIdentifier("2.5.29.37") #Any key purpose
+    # builder.authInfoAccessOCSP =
+    builder.crl_distribution_point_uri =  IA5String(u'www.acme.com/')
+    # builder.x509extensions =
+
+    dummy = builder.build(signing_private_key_path="private.pem")
 
     dumped = dummy.dump()
     hex = hexlify(dumped)
