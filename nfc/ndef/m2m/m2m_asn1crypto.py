@@ -261,7 +261,6 @@ class CertificateBuilder(object):
         """
 
         self.subject = subject
-        import ipdb; ipdb.set_trace()
         self.public_key = subject_public_key
         self.ca = False
 
@@ -474,34 +473,54 @@ class CertificateBuilder(object):
             random_part = util.rand_bytes(4)
             self.serial_number = int_from_bytes(time_part + random_part)
 
+        # Only re non-optionals are always in this dict
         properties = {
             'version':Integer(value=self._version),
             'serialNumber':OctetString(value=self.serial_number.to_bytes(20, byteorder='big')),
-            'cAAlgorithm':self.ca_algorithm,
-            'cAAlgParams':OctetString(value=self.ca_algorithm_parameters),
-            'issuer':self.issuer,
             'subject':self.subject,
-            'pKAlgorithm':self.pk_algorithm,
-            'pKAlgParams':OctetString(value=self.pk_algorithm_parameters),
-            'pubKey':OctetString(value=self.public_key),
-            'authKeyId':self.authkey_id,
-            'subjKeyId':OctetString(value=self.subject_key_id),
-            'keyUsage':OctetString(value=self.key_usage),
-            'basicConstraints':Integer(self.basic_constraints),
-            'certificatePolicy':self.certificate_policy,
-            'subjectAltName':self.subject_alternative_name,
-            'issuerAltName':self.issuer_alternative_name,
-            'extendedKeyUsage':self.extended_key_usage,
-            'authInfoAccessOCSP':self.auth_info_access_ocsp,
-            'cRLDistribPointURI':self.crl_distribution_point_uri,
-            'x509extensions':self.x509_extensions,
         }
 
-        if self.valid_from is not None: properties['validFrom'] = self.valid_from
+        # Optional fields are only added if they're not None
+        if self.ca_algorithm is not None:
+            properties['cAAlgorithm'] = self.ca_algorithm
+        if self.ca_algorithm_parameters is not None:
+            properties['cAAlgParams'] = OctetString(value=self.ca_algorithm_parameters)
+        if self.issuer is not None:
+            properties['issuer'] = self.issuer
+        if self.valid_from is not None:
+            properties['validFrom'] = self.valid_from
+        if self.valid_duration is not None:
+            properties['validDuration'] =  self.valid_duration
+        if self.pk_algorithm is not None:
+            properties['pKAlgorithm'] = self.pk_algorithm
+        if self.pk_algorithm_parameters is not None:
+            properties['pKAlgParams'] = OctetString(value=self.pk_algorithm_parameters)
+        if self.public_key is not None:
+            properties['pubKey'] = OctetString(value=self.public_key)
+        if self.authkey_id is not None:
+            properties['authKeyId'] = self.authkey_id
+        if self.subject_key_id is not None:
+            properties['subjKeyId'] = OctetString(value=self.subject_key_id)
+        if self.key_usage is not None:
+            properties['keyUsage'] = OctetString(value=self.key_usage)
+        if self.basic_constraints is not None:
+            properties['basicConstraints'] =  Integer(value=self.basic_constraints)
+        if self.certificate_policy is not None:
+            properties['certificatePolicy'] = self.certificate_policy
+        if self.subject_alternative_name is not None:
+            properties['subjectAltName'] = self.subject_alternative_name
+        if self.issuer_alternative_name is not None:
+            properties['issuerAltName'] = self.issuer_alternative_name
+        if self.extended_key_usage is not None:
+            properties['extendedKeyUsage'] = self.extended_key_usage
+        if self.auth_info_access_ocsp is not None:
+            properties['authInfoAccessOCSP'] = self.auth_info_access_ocsp
+        if self.crl_distribution_point_uri is not None:
+            properties['cRLDistribPointURI'] = self.crl_distribution_point_uri
+        if self.x509_extensions is not None:
+            properties['x509extensions'] = self.x509_extensions
 
-        if self.valid_duration is not None: properties['validDuration'] =  self.valid_duration
-
-        import ipdb; ipdb.set_trace()
+        # import ipdb; ipdb.set_trace()
         # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:2786
         tbs_cert = TBSCertificate(properties)
 
@@ -616,6 +635,9 @@ if __name__ == "__main__":
     # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:3373
     name2 = Name(value=[country])
 
+    authkey = AuthkeyID()
+    authkey[0] = OctetString(value=int(666).to_bytes(4, byteorder='big'))
+
     builder = CertificateBuilder(subject, int(123456789).to_bytes(20, byteorder='big'))
 
     builder.version = 0
@@ -628,7 +650,7 @@ if __name__ == "__main__":
     builder.pk_algorithm = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
     builder.pk_algorithm_parameters = int(123456789).to_bytes(4, byteorder='big')
     # builder.pubKey = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    builder.authkey_id = AuthkeyID()
+    builder.authkey_id = authkey
     builder.subject_key_id = int(123456789).to_bytes(4, byteorder='big')
     builder.key_usage = int(0).to_bytes(1, byteorder='big')
     # builder.basicConstraints =  # Omit if end-entity cert
