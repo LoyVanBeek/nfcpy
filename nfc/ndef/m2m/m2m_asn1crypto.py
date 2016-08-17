@@ -13,7 +13,42 @@ STANDARDS FOR EFFICIENT CRYPTOGRAPHY
 SEC 1: Elliptic Curve Cryptography
 September 20, 2000
 Version 1.0
-http://www.secg.org/SEC1-Ver-1.0.pdf"""
+http://www.secg.org/SEC1-Ver-1.0.pdf
+
+M2M-Certificate-Definition
+    {joint-iso-ccitt (2) country (16) usa (840) us-company (1)
+     nfc-forum (114513) modules (5) m2m-certificate (0)}
+
+-- Structure Must be DER encoded
+DEFINITIONS AUTOMATIC TAGS ::=
+BEGIN
+
+...
+
+-- Notes:
+-- * The times are represented using UNIX time, i.e. # of seconds
+--   since the unix epoch: http://en.wikipedia.org/wiki/Unix_time
+--   The validFrom field permits 40-bit values to avoid problems in
+--   2038 (when 32-bit values won’t be enough).
+--
+-- * The keyUsage field conveys a single octet equal to the
+--   second octet of the DER encoding of the following BIT STRING
+--
+--  KeyUsage ::= BIT STRING {
+--  digitalSignature (0),
+--  nonRepudiation (1),
+--  keyEncipherment (2),
+--  dataEncipherment (3),
+--  keyAgreement (4),
+--  keyCertSign (5),
+--  Use keyCertSign also for an ECQV certificate issuer
+--  cRLSign (6)
+--  the last bit in the byte is always zero (7)
+--  }
+--
+END
+"""
+
 
 
 # coding: utf-8
@@ -40,8 +75,17 @@ from asn1crypto.x509 import ExtensionId
 from binascii import hexlify
 
 # TODO: SIZEs are not encoded yet.
+# TODO: when decoding, the decoded_cert does not have any children, moreover, decoded_cert.children == None :-(
+# TODO: An M2M certificate should start with the APPLICATION 20 tag, not with a normal sequence tag.
 
 class Extension(Sequence):
+    """
+    Extension ::= SEQUENCE {
+        extnID              OBJECT IDENTIFIER,
+        criticality         BOOLEAN DEFAULT FALSE,
+        extnValue           OCTET STRING
+    }
+    """
     _fields = [
         ('extnID', ExtensionId),
         ('criticality', Boolean, {'default': False}),
@@ -50,10 +94,28 @@ class Extension(Sequence):
 
 
 class X509Extensions(SequenceOf):
+    """
+    X509Extensions ::= SEQUENCE OF Extension
+    """
     _child_spec = Extension
 
 
 class AttributeValue(Choice):
+    """
+    AttributeValue ::= CHOICE {
+        country             PrintableString (SIZE (2)),
+        organization        UTF8String (SIZE (1..32)),
+        organizationalUnit  UTF8String (SIZE (1..32)),
+        distinguishedNameQualifier PrintableString (SIZE (1..32)),
+        stateOrProvince     UTF8String (SIZE (1..4)),
+        locality            UTF8String (SIZE (1..32)),
+        commonName          UTF8String (SIZE (1..32)),
+        serialNumber        PrintableString (SIZE (1..32)),
+        domainComponent     IA5String (SIZE (1..32)),
+        registeredId        OBJECT IDENTIFIER,
+        octetsName          OCTET STRING (SIZE (1..8))
+    }
+    """
     _alternatives = [
         ('country', PrintableString),
         ('organization', UTF8String),
@@ -70,10 +132,24 @@ class AttributeValue(Choice):
 
 
 class Name(SequenceOf):
+    """
+    Name ::= SEQUENCE SIZE (1..4) OF AttributeValue
+    """
     _child_spec = AttributeValue
 
 
 class GeneralName(Choice):
+    """
+    GeneralName ::= CHOICE {
+        rfc822Name          IA5String (SIZE (1..128)),
+        dNSName             IA5String (SIZE (1..128)),
+        directoryName       Name,
+        uniformResourceIdentifier IA5String (SIZE (1..128)),
+        iPAddress           OCTET STRING (SIZE (1..16)),
+                            --4 octets for IPV4 16 octets for IPV6
+        registeredID        OBJECT IDENTIFIER
+    }
+    """
     _alternatives = [
         ('rfc822Name', IA5String),
         ('dNSName',    IA5String),
@@ -85,6 +161,13 @@ class GeneralName(Choice):
 
 
 class AuthkeyID(Sequence):
+    """
+    AuthKeyId ::= SEQUENCE {
+        keyIdentifier       OCTET STRING OPTIONAL,
+        authCertIssuer      GeneralName OPTIONAL,
+        authCertSerialNum   OCTET STRING (SIZE(1..20)) OPTIONAL
+    }
+    """
     _fields = [
         ('keyIdentified', OctetString, {'optional':True}),
         ('authCertIssuer', GeneralName, {'optional':True}),
@@ -112,6 +195,69 @@ class CaPkAlgorithm(ObjectIdentifier):
             '2.16.840.1.114513.1.10': 'ecqv-with-sha256-secp256r1',}
 
 class TBSCertificate(Sequence):
+    """
+    TBSCertificate ::= SEQUENCE {
+    version             INTEGER {v1(0)} DEFAULT v1,
+    serialNumber        OCTET STRING (SIZE (1..20)),
+    cAAlgorithm         OBJECT IDENTIFIER OPTIONAL, -- Identifies
+                        -- CA algorithm, hash function, and
+                        -- optionally other required parameters
+                        -- (e.g. In the case of ECC, the curve).
+                        --
+                        -- Required for signature verification but may
+                        -- be omitted from the transmitted cert and
+                        -- filled in from the pKAlgorithm of a
+                        -- superior cert (provided not root cert) prior
+                        -- to signature verification.
+                        -- For omitting rules, see B.3
+                        --
+    cAAlgParams         OCTET STRING OPTIONAL,  -- Identifies
+                        -- CA algorithm parameters
+                        --
+                        -- This specification does not provide for
+                        -- omitting this field in transmission and
+                        -- subsequently replacing it from a superior
+                        -- certificate for signature verification
+                        --
+    issuer              Name OPTIONAL, -- Identifies
+                        -- issuer name
+                        --
+                        -- Required for signature verification but may
+                        -- be omitted from the transmitted cert and
+                        -- filled in from the subject field of a
+                        -- superior cert (provided not root cert) prior
+                        -- to signature verification
+                        --
+    validFrom           OCTET STRING (SIZE (4..5)) OPTIONAL,
+                        -- Unix time. If omitted no validity specified
+    validDuration       OCTET STRING (SIZE (1..4)) OPTIONAL,
+                        -- # of seconds. If omitted no expiry specified
+    subject             Name,
+    pKAlgorithm         OBJECT IDENTIFIER OPTIONAL, -- Default is
+                        -- same as cAAlgorithm in this certificate.
+                        -- For omitting rules, see B.3
+    pKAlgParams         OCTET STRING OPTIONAL,
+    pubKey              OCTET STRING OPTIONAL,
+                        -- Omit for an ECQV certificate, see A.2
+    authKeyId           AuthKeyId OPTIONAL,
+    subjKeyId           OCTET STRING OPTIONAL,
+    keyUsage            OCTET STRING (SIZE (1)) OPTIONAL, -- Critical
+                        -- One byte containing a bit string,
+                        -- as described below
+    basicConstraints    INTEGER (0..7) OPTIONAL, -- If absent this is
+                        -- an end-entity cert; max intermed path length
+                        -- for CA certificate
+    certificatePolicy   OBJECT IDENTIFIER OPTIONAL, -- May use the
+                        -- current version of this policy
+    subjectAltName      GeneralName OPTIONAL,
+    issuerAltName       GeneralName OPTIONAL,
+    extendedKeyUsage    OBJECT IDENTIFIER OPTIONAL,
+    authInfoAccessOCSP  IA5String OPTIONAL,-- OCSP responder URI
+    cRLDistribPointURI  IA5String OPTIONAL,-- CRL distribution point URI
+    x509extensions      X509Extensions OPTIONAL,
+    ...
+}
+    """
     _fields = [
         ('version', Integer), #Version, {'default':Version('v1')}),
         ('serialNumber', OctetString),
@@ -139,6 +285,17 @@ class TBSCertificate(Sequence):
 
 
 class Certificate(Sequence):
+    """
+    -- The APPLICATION 20 tag is intended to make the M2M format apparent
+    -- by inspecting the first octet of the encoding
+
+    Certificate ::= [APPLICATION 20] IMPLICIT SEQUENCE {
+        tbsCertificate      TBSCertificate, -- To be signed certificate
+        cACalcValue         OCTET STRING -- Contains signature for a signed
+                            -- certificate or public key derivation value
+                            -- for an ECQV cert, see B.2
+    }
+    """
     _fields = [
         ('tbsCertificate', TBSCertificate),
         ('cACalcValue', OctetString)
@@ -646,6 +803,5 @@ if __name__ == "__main__":
     print(len(orig_dump))
 
     decoded_cert = Certificate.load(orig_dump)
-    assert decoded_cert.dump() == orig_dump
-    assert len(orig_cert.children) == 2
-    assert len(decoded_cert.children) == 2
+    assert decoded_cert.dump() == orig_dump  # Good: the encoding stays the same when repeated, as opposed to pyasn1
+    assert len(orig_cert.children) == len(decoded_cert.children)  # Bad: decoded_cert has no children, children == None
