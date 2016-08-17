@@ -19,6 +19,7 @@ http://www.secg.org/SEC1-Ver-1.0.pdf"""
 # coding: utf-8
 from __future__ import unicode_literals, division, absolute_import, print_function
 
+import base64
 import enum
 import subprocess
 from datetime import datetime, timedelta
@@ -615,59 +616,34 @@ def verify_signature(signed_bytes, signature, public_key_path='public.pem'):
         raise OSError(err)
 
 if __name__ == "__main__":
-    issuer = Name()
-    issuer[0] = AttributeValue(name='country',value=PrintableString(value='US'))
-    issuer[1] = AttributeValue(name='organization', value=UTF8String(value='Big CAhuna corporation'))
-    issuer[2] = AttributeValue(name='locality', value=UTF8String(value='San Fransisco'))
-
-    issuerAlternativeName = GeneralName(name='directoryName', value=issuer)
-
     subject = Name()
     subject[0] = AttributeValue(name='country', value=PrintableString(value='US'))
-    subject[1] = AttributeValue(name='organization', value=UTF8String(value='ACME Corporation'))
+    subject[1] = AttributeValue(name='organization', value=UTF8String(value='ACME corp.'))
     subject[2] = AttributeValue(name='locality', value=UTF8String(value='Fairfield'))
 
-    subjectAlternativeName = GeneralName(value=subject)
-
-    us = PrintableString(value='US')
-    country = AttributeValue(name='country', value= us)
-    # import ipdb; ipdb.set_trace()
-    # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:3373
-    name2 = Name(value=[country])
-
-    authkey = AuthkeyID()
-    authkey[0] = OctetString(value=int(666).to_bytes(4, byteorder='big'))
-
-    builder = CertificateBuilder(subject, int(123456789).to_bytes(20, byteorder='big'))
+    pubkey = base64.decodebytes(b'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyCjVqzDqCn5KS2QYmD6bCajY1L8+\nla/50oJSDw5nKZm9zqeUIxwpl215Gz+aeBJOEHEC06fHjnb3TNdQcu1aKg==')
+    builder = CertificateBuilder(subject, pubkey)
 
     builder.version = 0
-    builder.ca_algorithm = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
-    builder.ca_algorithm_parameters = bytes([0,1,2,3,4,5,6,7,8,9])
-    builder.issuer = issuer
-    # builder.valid_from = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    # builder.valid_duration = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    # builder.subject = subject
-    builder.pk_algorithm = "1.2.3.4" #ObjectIdentifier("1.2.3.4")
-    builder.pk_algorithm_parameters = int(123456789).to_bytes(4, byteorder='big')
-    # builder.pubKey = OctetString(value=int(123456789).to_bytes(4, byteorder='big'))
-    builder.authkey_id = authkey
-    builder.subject_key_id = int(123456789).to_bytes(4, byteorder='big')
-    builder.key_usage = int(0).to_bytes(1, byteorder='big')
+    builder.serial_number = 123456789
+    builder.ca_algorithm = "1.2.840.10045.4.3.2" # ECDSA with SHA256, see http://oid-info.com/get/1.2.840.10045.4.3.2
+    builder.ca_algorithm_parameters = base64.decodebytes(b'BggqhkjOPQMBBw==') # EC PARAMETERS
+                             # Parameters for the elliptic curve: http://oid-info.com/get/1.2.840.10045.3.1.7
+    builder.self_signed = True #builder.issuer = subject
+    builder.pk_algorithm = pKAlgorithm="1.2.840.10045.4.3.2"  # Same as cAAlgorithm
+    builder.subject_key_id = int(1).to_bytes(1, byteorder='big')
+    builder.key_usage = 0b10100000.to_bytes(1, byteorder='big') # digitalSignature & keyEncipherment bit set
     # builder.basicConstraints =  # Omit if end-entity cert
-    builder.certificate_policy = "2.5.29.3" #ObjectIdentifier("2.5.29.3")
-    # builder.subjectAltName = subjectAlternativeName
-    # builder.issuerAltName = issuerAlternativeName
-    builder.extended_key_usage = "2.5.29.37" #ObjectIdentifier("2.5.29.37") #Any key purpose
-    # builder.authInfoAccessOCSP =
-    builder.crl_distribution_point_uri =  IA5String(u'www.acme.com/')
-    # builder.x509extensions =
+    builder.certificate_policy = "2.5.29.32.0"  # Anypolicy: http://www.oid-info.com/get/2.5.29.32.0
+    builder.extended_key_usage = "2.16.840.1.114513.29.37" # Optional in ASN1 but explanation in spec says it MUST be present. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
+    # builder.crl_distribution_point_uri =  IA5String(u'www.acme.com/')
 
     dummy = builder.build(signing_private_key_path="private.pem")
 
     dumped = dummy.dump()
     hex = hexlify(dumped)
     print(hex)
-    print(len(hex))
+    print(len(dumped))
 
     decoded = Certificate.load(dumped)
     assert decoded.dump() == dumped
