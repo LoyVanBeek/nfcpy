@@ -261,7 +261,7 @@ class TBSCertificate(Sequence):
     _fields = [
         ('version', Integer), #Version, {'default':Version('v1')}),
         ('serialNumber', OctetString),
-        ('cAAlgorithm', CaPkAlgorithm, {'optional':True}),
+        ('cAAlgorithm', CaPkAlgorithm, {'optional':True}), #, 'tag':1 makes this appear like a boolean
         ('cAAlgParams', OctetString, {'optional':True}),
         ('issuer', Name, {'optional':True}),
         ('validFrom', OctetString, {'optional':True}),
@@ -609,7 +609,7 @@ class CertificateBuilder(object):
     def x509_extensions(self, value):
         self._x509_extensions = value
 
-    def build(self, signing_private_key_path):
+    def build(self, signing_private_key_path, debug=False):
         """
         Validates the certificate information, constructs the ASN.1 structure
         and then signs it
@@ -687,6 +687,10 @@ class CertificateBuilder(object):
 
         bytes_to_sign = tbs_cert.dump()
         signature = generate_signature(bytes_to_sign, signing_private_key_path)
+
+        if debug:
+            # print("Signed_bytes ({len}): {content}".format(len=len(bytes_to_sign), content=hexlify(bytes_to_sign)))
+            print("Signature ({len}): {content}".format(len=len(signature), content=hexlify(signature)))
 
 
         return Certificate({
@@ -776,6 +780,26 @@ def verify_signature(signed_bytes, signature, public_key_path='public.pem'):
     else:
         raise OSError(err)
 
+
+class CertificateVerifier(object):
+    def __init__(self, public_key_path):
+        self.public_key_path = public_key_path
+
+    def verify(self, certificate, debug=False):
+        # import ipdb; ipdb.set_trace()
+        signed_bytes = certificate['tbsCertificate'].dump()
+        signature = certificate['cACalcValue'].dump()
+
+        if debug:
+            # print("Signed_bytes ({len}): {content}".format(len=len(signed_bytes), content=hexlify(signed_bytes)))
+            print("Signature ({len}): {content}".format(len=len(signature), content=hexlify(signature)))
+
+        return verify_signature(signed_bytes, signature, self.public_key_path)
+
+    def verify_bytes(self, certificate_bytes):
+        decoded_certificate = Certificate.load(certificate_bytes)
+        return self.verify(decoded_certificate)
+
 if __name__ == "__main__":
     subject = Name()
     subject[0] = AttributeValue(name='country', value=PrintableString(value='US'))
@@ -789,7 +813,7 @@ if __name__ == "__main__":
     builder.serial_number = 123456789
     builder.ca_algorithm = "1.2.840.10045.4.3.2" # ECDSA with SHA256, see http://oid-info.com/get/1.2.840.10045.4.3.2
     builder.ca_algorithm_parameters = base64.decodebytes(b'BggqhkjOPQMBBw==') # EC PARAMETERS
-                             # Parameters for the elliptic curve: http://oid-info.com/get/1.2.840.10045.3.1.7
+    # Parameters for the elliptic curve: http://oid-info.com/get/1.2.840.10045.3.1.7
     builder.self_signed = True #builder.issuer = subject
     builder.pk_algorithm = pKAlgorithm="1.2.840.10045.4.3.2"  # Same as cAAlgorithm
     builder.subject_key_id = int(1).to_bytes(1, byteorder='big')
@@ -799,19 +823,52 @@ if __name__ == "__main__":
     builder.extended_key_usage = "2.16.840.1.114513.29.37" # Optional in ASN1 but explanation in spec says it MUST be present. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
     # builder.crl_distribution_point_uri =  IA5String(u'www.acme.com/')
 
-    orig_cert = builder.build(signing_private_key_path="private.pem")
+    orig_cert = builder.build(signing_private_key_path="private.pem", debug=True)
 
     orig_dump = orig_cert.dump()
     orig_dump_hex = hexlify(orig_dump)
-    print(orig_dump_hex)
-    print(len(orig_dump))
+    # print(orig_dump_hex)
+    # print(len(orig_dump))
 
     # import ipdb; ipdb.set_trace()
-    # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:4486
-    # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:4547
+    # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:270
     decoded_cert = Certificate.load(orig_dump)
+    # When loading, all that happens is that some .contents is set to the bytes we pass it.
+    # .contents is not processed in any way further.
+
+
     assert decoded_cert.dump() == orig_dump  # Good: the encoding stays the same when repeated, as opposed to pyasn1
+    # try:
+    #     assert len(orig_cert.children) == len(decoded_cert.children)  # Bad: decoded_cert has no children, children == None
+    # except (AssertionError, TypeError) as err:
+    #     print("TODO: Bad: decoded_cert has no children, children == None")
+
+    # print("orig_cert.native == decoded_cert.native: {}".format(orig_cert.native == decoded_cert.native))
+    # print("orig_cert['tbsCertificate'] == decoded_cert['tbsCertificate']: {}".format(orig_cert['tbsCertificate'] == decoded_cert['tbsCertificate']))
+
+    assert orig_cert['tbsCertificate'].dump() == decoded_cert['tbsCertificate'].dump()  # This is what we need for signatures
+    assert orig_cert['cACalcValue'].dump() == decoded_cert['cACalcValue'].dump()  # This is what we need for signatures
+
+    def diffOrderedDicts(a, b):
+        if a.keys() == b.keys():
+            return {key:(a[key], b[key]) for key in a.keys() if a[key] != b[key]}
+        else:
+            return set(a.keys()) - set(b.keys())
+
+    # This needs to be fixed with tagging, so that all the items land in the appropriate field index/name
+    # for mismatch_key, (a, b) in  diffOrderedDicts(orig_cert['tbsCertificate'].native,
+    #                                             decoded_cert['tbsCertificate'].native).items():
+    #     print("Orig != decoded for key '{key}': {a} != {b}".format(key=mismatch_key, a=a, b=b))
+
+    verifier = CertificateVerifier('public.pem')
+
     try:
-        assert len(orig_cert.children) == len(decoded_cert.children)  # Bad: decoded_cert has no children, children == None
-    except (AssertionError, TypeError) as err:
-        print("TODO: Bad: decoded_cert has no children, children == None")
+        print("Orig_cert verification: {}".format(verifier.verify(orig_cert, debug=True)))
+    except OSError as ose:
+        print("Could not verify certificate: {}".format(ose))
+
+    # try:
+    #     print("Decoded_cert verification: {}".format(verifier.verify(decoded_cert, debug=True)))
+    # except OSError as ose:
+    #     print("Could not verify certificate: {}".format(ose))
+
