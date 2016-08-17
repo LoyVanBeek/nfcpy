@@ -638,14 +638,14 @@ if __name__ == "__main__":
     builder.extended_key_usage = "2.16.840.1.114513.29.37" # Optional in ASN1 but explanation in spec says it MUST be present. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
     # builder.crl_distribution_point_uri =  IA5String(u'www.acme.com/')
 
-    dummy = builder.build(signing_private_key_path="private.pem")
+    orig_cert = builder.build(signing_private_key_path="private.pem")
 
-    dumped = dummy.dump()
-    hex = hexlify(dumped)
-    print(hex)
-    print(len(dumped))
+    orig_dump = orig_cert.dump()
+    orig_dump_hex = hexlify(orig_dump)
+    print(orig_dump_hex)
+    print(len(orig_dump))
 
-    decoded = Certificate.load(dumped)
-    assert decoded.dump() == dumped
-    assert len(dummy.children) == 2
-    assert len(decoded.children) == 2
+    decoded_cert = Certificate.load(orig_dump)
+    assert decoded_cert.dump() == orig_dump
+    assert len(orig_cert.children) == 2
+    assert len(decoded_cert.children) == 2
