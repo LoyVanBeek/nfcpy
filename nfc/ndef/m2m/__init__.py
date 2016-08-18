@@ -859,13 +859,13 @@ if __name__ == "__main__":
     subject[1] = AttributeValue(name='organization', value=UTF8String(value='ACME corp.'))
     subject[2] = AttributeValue(name='locality', value=UTF8String(value='Fairfield'))
 
-    pubkey = base64.decodebytes(b'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEyCjVqzDqCn5KS2QYmD6bCajY1L8+\nla/50oJSDw5nKZm9zqeUIxwpl215Gz+aeBJOEHEC06fHjnb3TNdQcu1aKg==')
+    pubkey = contentbytes_from_pem_file("public.pem")
     builder = CertificateBuilder(subject, pubkey)
 
     builder.version = 0
     builder.serial_number = 123456789
     builder.ca_algorithm = "1.2.840.10045.4.3.2" # ECDSA with SHA256, see http://oid-info.com/get/1.2.840.10045.4.3.2
-    builder.ca_algorithm_parameters = base64.decodebytes(b'BggqhkjOPQMBBw==') # EC PARAMETERS
+    builder.ca_algorithm_parameters = ObjectIdentifier(value="1.2.840.10045.3.1.7").dump()  # EC PARAMETERS as bytes
     # Parameters for the elliptic curve: http://oid-info.com/get/1.2.840.10045.3.1.7
     builder.self_signed = True #builder.issuer = subject
     builder.pk_algorithm = "1.2.840.10045.4.3.2"  # Same as cAAlgorithm
