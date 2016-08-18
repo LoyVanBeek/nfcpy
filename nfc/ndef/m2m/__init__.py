@@ -411,7 +411,7 @@ class CertificateBuilder(object):
 
     _self_signed = False
 
-
+    # TODO: It makes more sense to pass the issuer here and pass the subject when building. subject changes, issuer is constant
     def __init__(self, subject, subject_public_key):
         """
         Unless changed, certificates will use SHA-256 for the signature,
@@ -797,11 +797,22 @@ def m2m_certificate_from_file(certificate_path):
 def m2m_certificate_from_bytes(byte_sequence):
     return Certificate.load(byte_sequence)
 
-def generate_signature(to_be_signed_bytes, private_key_path='private.pem'):
-    """openssl dgst -sha256 -sign private.pem -out signature.der message.txt"""
+def generate_signature(to_be_signed_bytes, private_key_path=None, private_key_bytes=None):
+    """openssl dgst -sha256 -sign private.pem -out signature.der message.txt
+    :param private_key_bytes:
+    """
+    # TODO: Replace this with eg. pyopenssl, something where we do not need to use files in between as it is a security hole
     byte_path = "/tmp/to_be_signed.tmp"
     with open(byte_path, 'wb') as byte_file:
         byte_file.write(to_be_signed_bytes)
+
+    if private_key_path == None and private_key_bytes != None:
+        # Then write the private key somewhere and write the bytes to it
+        private_key_path = "/tmp/pk.tmp"
+        with open(private_key_path, 'wb') as pk_file:
+            pk_file.write(b'-----BEGIN PRIVATE KEY-----' + b'\n')
+            pk_file.write(base64.encodebytes(private_key_bytes))
+            pk_file.write(b'-----END PRIVATE KEY-----' + b'\n')
 
     signature_path = "/tmp/signature.der"
     proc = subprocess.Popen(['openssl', 'dgst', '-sha256', '-sign', private_key_path, '-out', signature_path, byte_path],
@@ -815,8 +826,11 @@ def generate_signature(to_be_signed_bytes, private_key_path='private.pem'):
     else:
         raise OSError(err)
 
-def verify_signature(signed_bytes, signature, public_key_path='public.pem'):
-    """openssl dgst -sha256 -verify public.pem -signature signature.der message.txt"""
+def verify_signature(signed_bytes, signature, public_key_path=None, public_key_bytes=None):
+    """openssl dgst -sha256 -verify public.pem -signature signature.der message.txt
+    :param public_key_bytes:
+    """
+    # TODO: Replace this with eg. pyopenssl, something where we do not need to use files in between as it is a security hole
     byte_path = "/tmp/signed.tmp"
     with open(byte_path, 'wb') as byte_file:
         byte_file.write(signed_bytes)
@@ -824,6 +838,14 @@ def verify_signature(signed_bytes, signature, public_key_path='public.pem'):
     signature_path = "/tmp/signature.der"
     with open(signature_path, 'wb') as signature_file:
         signature_file.write(signature)
+
+    if public_key_path == None and public_key_bytes != None:
+        # Then write the public key somewhere and write the bytes to it
+        public_key_path = "/tmp/pk.tmp"
+        with open(public_key_path, 'wb') as pk_file:
+            pk_file.write(b'-----BEGIN PUBLIC KEY-----' + b'\n')
+            pk_file.write(base64.encodebytes(public_key_bytes))
+            pk_file.write(b'-----END PUBLIC KEY-----' + b'\n')
 
     proc = subprocess.Popen(['openssl', 'dgst', '-sha256', '-verify', public_key_path, '-signature', signature_path, byte_path],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
