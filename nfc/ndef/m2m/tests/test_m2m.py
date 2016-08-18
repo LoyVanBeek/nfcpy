@@ -154,7 +154,6 @@ class TestCryptography(unittest.TestCase):
         generate_ec_private_key(private_key_path=self.private)
         extract_ec_public_key(private_key_path=self.private, public_key_path=self.public)
 
-    def test_crypto(self):
         subject = Name()
         subject[0] = AttributeValue(name='country', value=PrintableString(value='US'))
         subject[1] = AttributeValue(name='organization', value=UTF8String(value='ACME corp.'))
@@ -176,17 +175,46 @@ class TestCryptography(unittest.TestCase):
         builder.extended_key_usage = "2.16.840.1.114513.29.37"  # Optional in ASN1 but explanation in spec says it MUST be present. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
         # builder.crl_distribution_point_uri =  IA5String(u'www.acme.com/')
 
-        orig_cert = builder.build(signing_private_key_path=self.private)
+        self.orig_cert = builder.build(signing_private_key_path=self.private)
 
-        orig_dump = orig_cert.dump()
+    def test_crypto_pass_without_modification(self):
+        orig_dump = self.orig_cert.dump()
 
         decoded_cert = Certificate.load(orig_dump)
 
         self.assertEqual(decoded_cert.dump(), orig_dump)
-        self.assertEqual(orig_cert['tbsCertificate'].dump(), decoded_cert['tbsCertificate'].dump())  # This is what we need for signatures
-        self.assertEqual(orig_cert['cACalcValue'].dump(), decoded_cert[ 'cACalcValue'].dump())  # This is what we need for signatures
+        self.assertEqual(self.orig_cert['tbsCertificate'].dump(), decoded_cert['tbsCertificate'].dump())  # This is what we need for signatures
+        self.assertEqual(self.orig_cert['cACalcValue'].dump(), decoded_cert[ 'cACalcValue'].dump())  # This is what we need for signatures
 
         verifier = CertificateVerifier(self.public)
 
-        self.assertTrue(verifier.verify(orig_cert))
+        self.assertTrue(verifier.verify(self.orig_cert))
         self.assertTrue(verifier.verify(decoded_cert))
+
+    def test_crypto_fail_with_tbs_modification(self):
+        orig_dump = self.orig_cert.dump()
+
+        modified_dump = bytearray(orig_dump)
+        modified_dump[10] += 1  # We modify the to-be-signed content, so the signature changes
+
+        decoded_cert = Certificate.load(modified_dump)
+
+        self.assertNotEqual(self.orig_cert['tbsCertificate'].dump(), decoded_cert['tbsCertificate'].dump())
+
+        verifier = CertificateVerifier(self.public)
+
+        self.assertFalse(verifier.verify(decoded_cert))
+
+    def test_crypto_fail_with_signature_modification(self):
+        orig_dump = self.orig_cert.dump()
+
+        modified_dump = bytearray(orig_dump)
+        modified_dump[-1] += 1  # We modify the last byte, so the signature changes
+
+        decoded_cert = Certificate.load(modified_dump)
+
+        self.assertNotEqual(self.orig_cert['cACalcValue'].dump(), decoded_cert[ 'cACalcValue'].dump())
+
+        verifier = CertificateVerifier(self.public)
+
+        self.assertFalse(verifier.verify(decoded_cert))
