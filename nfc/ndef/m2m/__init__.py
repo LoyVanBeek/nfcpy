@@ -751,6 +751,53 @@ def _type_name(value):
     return '%s.%s' % (cls.__module__, cls.__name__)
 
 
+def generate_ec_private_key(curve='prime256v1', private_key_path='private.pem'):
+    """openssl ecparam -genkey -name prime256v1 -out private.pem"""
+    proc = subprocess.Popen(
+        ['openssl', 'ecparam','-genkey', '-name', curve,'-out', private_key_path],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = proc.communicate()
+
+    if err:
+        raise OSError(err)
+
+def extract_ec_public_key(private_key_path='private.pem', public_key_path='public.pem'):
+    """openssl ec -in private.pem -pubout -out public.pem"""
+    proc = subprocess.Popen(
+        ['openssl', 'ec', '-in', private_key_path, '-pubout', public_key_path],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = proc.communicate()
+
+    if not err:
+        with open(public_key_path, 'rb') as signature_file:
+            signature = signature_file.read()
+            return signature
+    else:
+        raise OSError(err)
+
+def m2m_certificate_to_file(certificate, certificate_path, debug=False):
+    with open(certificate_path, 'wb+') as cert_file:
+        cert_file.write(b'------BEGIN CERTIFICATE------'+b'\n')
+        encoded = certificate.dump()
+        if debug:
+            print("Writing to file: {}".format(hexlify(encoded)))
+        cert_file.write(base64.encodebytes(encoded))
+        cert_file.write(b'------END CERTIFICATE------')
+
+def m2m_bytes_from_file(certificate_path):
+    with open(certificate_path, 'rb') as cert_file:
+        lines = cert_file.readlines()
+        content_lines = lines[1:-1]
+        content = b''.join(content_lines)
+        return base64.decodebytes(content)
+
+def m2m_certificate_from_file(certificate_path):
+    b = m2m_bytes_from_file(certificate_path)
+    return m2m_certificate_from_bytes(b)
+
+def m2m_certificate_from_bytes(byte_sequence):
+    return Certificate.load(byte_sequence)
+
 def generate_signature(to_be_signed_bytes, private_key_path='private.pem'):
     """openssl dgst -sha256 -sign private.pem -out signature.der message.txt"""
     byte_path = "/tmp/to_be_signed.tmp"
