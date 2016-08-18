@@ -56,6 +56,8 @@ class SignatureRecord(Record):
 
     _mappings = _ecdsa_mapping # + other mappings
 
+    RECORD_TYPE = 'urn:nfc:wkt:Sig'
+
     def __init__(self,
                  version=0x20, signature=None,
                  certificate_chain=None, signature_uri=None, signature_type=None, hash_type=HashType.SHA_256_SHS, certificate_format=None,
@@ -74,7 +76,7 @@ class SignatureRecord(Record):
         :param certificate_format indicates the type of certificate for all of the certificates in certificate_chain
         :type certificate_format CertificateFormat
         """
-        super(SignatureRecord, self).__init__('urn:nfc:wkt:Sig')
+        super(SignatureRecord, self).__init__(SignatureRecord.RECORD_TYPE)
 
         self._version = None
         self.certificate_chain = None
