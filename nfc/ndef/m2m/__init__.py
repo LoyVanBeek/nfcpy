@@ -635,7 +635,7 @@ class CertificateBuilder(object):
 
         if self.serial_number is None:
             time_part = int_to_bytes(int(time.time()))
-            random_part = random.getrandbits(24)  # Must contain at least 20 randomly generated BITS
+            random_part = random.getrandbits(24).to_bytes(3, byteorder='big')  # Must contain at least 20 randomly generated BITS
             self.serial_number = int_from_bytes(time_part + random_part)
 
         # Only re non-optionals are always in this dict
@@ -863,7 +863,7 @@ if __name__ == "__main__":
     builder = CertificateBuilder(subject, pubkey)
 
     builder.version = 0
-    builder.serial_number = 123456789
+    # builder.serial_number = None
     builder.ca_algorithm = "1.2.840.10045.4.3.2" # ECDSA with SHA256, see http://oid-info.com/get/1.2.840.10045.4.3.2
     builder.ca_algorithm_parameters = ObjectIdentifier(value="1.2.840.10045.3.1.7").dump()  # EC PARAMETERS as bytes
     # Parameters for the elliptic curve: http://oid-info.com/get/1.2.840.10045.3.1.7
