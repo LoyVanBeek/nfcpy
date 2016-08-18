@@ -76,7 +76,7 @@ from asn1crypto.x509 import ExtensionId
 from binascii import hexlify
 
 # TODO: SIZEs are not encoded yet.
-# TODO: when decoding, the decoded_cert does not have any children, moreover, decoded_cert.children == None :-(
+# TODO: tagging. Spec says 'DEFINITIONS AUTOMATIC TAGS' so all elements should have a tag somehow
 
 class Extension(Sequence):
     """
@@ -688,6 +688,8 @@ class CertificateBuilder(object):
         bytes_to_sign = tbs_cert.dump()
         signature = generate_signature(bytes_to_sign, signing_private_key_path)
 
+        # assert verify_signature(bytes_to_sign, signature, "public.pem")
+
         if debug:
             # print("Signed_bytes ({len}): {content}".format(len=len(bytes_to_sign), content=hexlify(bytes_to_sign)))
             print("Signature ({len}): {content}".format(len=len(signature), content=hexlify(signature)))
@@ -786,9 +788,9 @@ class CertificateVerifier(object):
         self.public_key_path = public_key_path
 
     def verify(self, certificate, debug=False):
-        # import ipdb; ipdb.set_trace()
         signed_bytes = certificate['tbsCertificate'].dump()
-        signature = certificate['cACalcValue'].dump()
+        octet_string = certificate['cACalcValue']
+        signature = octet_string.native  # We want to content of the octet string, which happens to be ASN.1 encoded as well; A sequence of 2 ints in case of ECDSA
 
         if debug:
             # print("Signed_bytes ({len}): {content}".format(len=len(signed_bytes), content=hexlify(signed_bytes)))
@@ -823,7 +825,7 @@ if __name__ == "__main__":
     builder.extended_key_usage = "2.16.840.1.114513.29.37" # Optional in ASN1 but explanation in spec says it MUST be present. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
     # builder.crl_distribution_point_uri =  IA5String(u'www.acme.com/')
 
-    orig_cert = builder.build(signing_private_key_path="private.pem", debug=True)
+    orig_cert = builder.build(signing_private_key_path="private.pem")
 
     orig_dump = orig_cert.dump()
     orig_dump_hex = hexlify(orig_dump)
@@ -863,12 +865,15 @@ if __name__ == "__main__":
     verifier = CertificateVerifier('public.pem')
 
     try:
-        print("Orig_cert verification: {}".format(verifier.verify(orig_cert, debug=True)))
+        print("Orig_cert verification: {}".format(verifier.verify(orig_cert)))
     except OSError as ose:
         print("Could not verify certificate: {}".format(ose))
 
-    # try:
-    #     print("Decoded_cert verification: {}".format(verifier.verify(decoded_cert, debug=True)))
-    # except OSError as ose:
-    #     print("Could not verify certificate: {}".format(ose))
+    try:
+        print("Decoded_cert verification: {}".format(verifier.verify(decoded_cert)))
+    except OSError as ose:
+        print("Could not verify certificate: {}".format(ose))
 
+    # TODO: see git log.
+    # https://lapo.it/asn1js/#304602210093E092BB880EDAF766FC118B20915508B52460FEE33898C271FEF66B465B214A022100A5DB372FB48C69F5A7A7B5F1AC68B03CED5B1B3B73A45152798E9F5CA0DDD853 is what we put in the certificate, output from openSSL.
+    # https://lapo.it/asn1js/#0448304602210093E092BB880EDAF766FC118B20915508B52460FEE33898C271FEF66B465B214A022100A5DB372FB48C69F5A7A7B5F1AC68B03CED5B1B3B73A45152798E9F5CA0DDD853 is what we pull out of the certificate
