@@ -784,7 +784,7 @@ def m2m_certificate_to_file(certificate, certificate_path, debug=False):
         cert_file.write(base64.encodebytes(encoded))
         cert_file.write(b'------END CERTIFICATE------')
 
-def m2m_bytes_from_file(certificate_path):
+def contentbytes_from_pem_file(certificate_path):
     with open(certificate_path, 'rb') as cert_file:
         lines = cert_file.readlines()
         content_lines = lines[1:-1]
@@ -792,7 +792,7 @@ def m2m_bytes_from_file(certificate_path):
         return base64.decodebytes(content)
 
 def m2m_certificate_from_file(certificate_path):
-    b = m2m_bytes_from_file(certificate_path)
+    b = contentbytes_from_pem_file(certificate_path)
     return m2m_certificate_from_bytes(b)
 
 def m2m_certificate_from_bytes(byte_sequence):
