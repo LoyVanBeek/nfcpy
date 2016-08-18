@@ -47,6 +47,11 @@ BEGIN
 --  }
 --
 END
+
+For some documentation on ASN.1, look at
+- http://www.zytrax.com/books/ldap/apb/asn1.pdf
+- http://www.obj-sys.com/asn1tutorial/node4.html
+- http://stackoverflow.com/questions/3296761/i-need-an-example-to-understand-implicit-tagging-in-asn-1
 """
 
 
@@ -691,8 +696,8 @@ class CertificateBuilder(object):
         # assert verify_signature(bytes_to_sign, signature, "public.pem")
 
         if debug:
-            # print("Signed_bytes ({len}): {content}".format(len=len(bytes_to_sign), content=hexlify(bytes_to_sign)))
-            print("Signature ({len}): {content}".format(len=len(signature), content=hexlify(signature)))
+            print("Signed_bytes ({len}): {content}".format(len=len(bytes_to_sign), content=hexlify(bytes_to_sign)))
+            print("Build - Signature ({len}): {content}".format(len=len(signature), content=hexlify(signature)))
 
 
         return Certificate({
@@ -793,8 +798,8 @@ class CertificateVerifier(object):
         signature = octet_string.native  # We want to content of the octet string, which happens to be ASN.1 encoded as well; A sequence of 2 ints in case of ECDSA
 
         if debug:
-            # print("Signed_bytes ({len}): {content}".format(len=len(signed_bytes), content=hexlify(signed_bytes)))
-            print("Signature ({len}): {content}".format(len=len(signature), content=hexlify(signature)))
+            print("Signed_bytes ({len}): {content}".format(len=len(signed_bytes), content=hexlify(signed_bytes)))
+            print("Verify - Signature ({len}): {content}".format(len=len(signature), content=hexlify(signature)))
 
         return verify_signature(signed_bytes, signature, self.public_key_path)
 
@@ -825,12 +830,11 @@ if __name__ == "__main__":
     builder.extended_key_usage = "2.16.840.1.114513.29.37" # Optional in ASN1 but explanation in spec says it MUST be present. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
     # builder.crl_distribution_point_uri =  IA5String(u'www.acme.com/')
 
-    orig_cert = builder.build(signing_private_key_path="private.pem")
+    orig_cert = builder.build(signing_private_key_path="private.pem", debug=True)
 
     orig_dump = orig_cert.dump()
     orig_dump_hex = hexlify(orig_dump)
-    # print(orig_dump_hex)
-    # print(len(orig_dump))
+    print("Original certificate ({len}): {content}".format(content=orig_dump_hex, len=len(orig_dump)))
 
     # import ipdb; ipdb.set_trace()
     # break /usr/local/lib/python3.5/dist-packages/asn1crypto/core.py:270
@@ -840,40 +844,17 @@ if __name__ == "__main__":
 
 
     assert decoded_cert.dump() == orig_dump  # Good: the encoding stays the same when repeated, as opposed to pyasn1
-    # try:
-    #     assert len(orig_cert.children) == len(decoded_cert.children)  # Bad: decoded_cert has no children, children == None
-    # except (AssertionError, TypeError) as err:
-    #     print("TODO: Bad: decoded_cert has no children, children == None")
-
-    # print("orig_cert.native == decoded_cert.native: {}".format(orig_cert.native == decoded_cert.native))
-    # print("orig_cert['tbsCertificate'] == decoded_cert['tbsCertificate']: {}".format(orig_cert['tbsCertificate'] == decoded_cert['tbsCertificate']))
-
     assert orig_cert['tbsCertificate'].dump() == decoded_cert['tbsCertificate'].dump()  # This is what we need for signatures
     assert orig_cert['cACalcValue'].dump() == decoded_cert['cACalcValue'].dump()  # This is what we need for signatures
-
-    def diffOrderedDicts(a, b):
-        if a.keys() == b.keys():
-            return {key:(a[key], b[key]) for key in a.keys() if a[key] != b[key]}
-        else:
-            return set(a.keys()) - set(b.keys())
-
-    # This needs to be fixed with tagging, so that all the items land in the appropriate field index/name
-    # for mismatch_key, (a, b) in  diffOrderedDicts(orig_cert['tbsCertificate'].native,
-    #                                             decoded_cert['tbsCertificate'].native).items():
-    #     print("Orig != decoded for key '{key}': {a} != {b}".format(key=mismatch_key, a=a, b=b))
 
     verifier = CertificateVerifier('public.pem')
 
     try:
-        print("Orig_cert verification: {}".format(verifier.verify(orig_cert)))
+        print("Orig_cert verification: {}".format(verifier.verify(orig_cert, debug=True)))
     except OSError as ose:
         print("Could not verify certificate: {}".format(ose))
 
     try:
-        print("Decoded_cert verification: {}".format(verifier.verify(decoded_cert)))
+        print("Decoded_cert verification: {}".format(verifier.verify(decoded_cert, debug=True)))
     except OSError as ose:
         print("Could not verify certificate: {}".format(ose))
-
-    # TODO: see git log.
-    # https://lapo.it/asn1js/#304602210093E092BB880EDAF766FC118B20915508B52460FEE33898C271FEF66B465B214A022100A5DB372FB48C69F5A7A7B5F1AC68B03CED5B1B3B73A45152798E9F5CA0DDD853 is what we put in the certificate, output from openSSL.
-    # https://lapo.it/asn1js/#0448304602210093E092BB880EDAF766FC118B20915508B52460FEE33898C271FEF66B465B214A022100A5DB372FB48C69F5A7A7B5F1AC68B03CED5B1B3B73A45152798E9F5CA0DDD853 is what we pull out of the certificate
