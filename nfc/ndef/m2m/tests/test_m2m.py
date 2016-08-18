@@ -143,4 +143,50 @@ class TestTbsCertificate(unittest.TestCase):
         encoded_tbs = orig_tbs.dump()
         decoded_tbs = TBSCertificate.load(encoded_tbs)
 
-        self.assertEquals(orig_tbs.dump(), decoded_tbs.dump())
+        self.assertEqual(orig_tbs.dump(), decoded_tbs.dump())
+
+
+class TestCryptography(unittest.TestCase):
+    def setUp(self):
+        self.private = '/tmp/unittest_private_key.pem'
+        self.public = '/tmp/unittest_public_key.pem'
+
+        generate_ec_private_key(private_key_path=self.private)
+        extract_ec_public_key(private_key_path=self.private, public_key_path=self.public)
+
+    def test_crypto(self):
+        subject = Name()
+        subject[0] = AttributeValue(name='country', value=PrintableString(value='US'))
+        subject[1] = AttributeValue(name='organization', value=UTF8String(value='ACME corp.'))
+        subject[2] = AttributeValue(name='locality', value=UTF8String(value='Fairfield'))
+
+        pubkey = contentbytes_from_pem_file(self.public)
+        builder = CertificateBuilder(subject, pubkey)
+
+        builder.version = 0
+        builder.ca_algorithm = "1.2.840.10045.4.3.2"  # ECDSA with SHA256, see http://oid-info.com/get/1.2.840.10045.4.3.2
+        builder.ca_algorithm_parameters = ObjectIdentifier(value="1.2.840.10045.3.1.7").dump()  # EC PARAMETERS as bytes
+        # Parameters for the elliptic curve: http://oid-info.com/get/1.2.840.10045.3.1.7
+        builder.self_signed = True  # builder.issuer = subject
+        builder.pk_algorithm = "1.2.840.10045.4.3.2"  # Same as cAAlgorithm
+        builder.subject_key_id = int(1).to_bytes(1, byteorder='big')
+        builder.key_usage = 0b10100000.to_bytes(1, byteorder='big')  # digitalSignature & keyEncipherment bit set
+        # builder.basicConstraints =  # Omit if end-entity cert
+        builder.certificate_policy = "2.5.29.32.0"  # Anypolicy: http://www.oid-info.com/get/2.5.29.32.0
+        builder.extended_key_usage = "2.16.840.1.114513.29.37"  # Optional in ASN1 but explanation in spec says it MUST be present. Variant of X509 http://www.oid-info.com/get/2.5.29.37.0
+        # builder.crl_distribution_point_uri =  IA5String(u'www.acme.com/')
+
+        orig_cert = builder.build(signing_private_key_path=self.private)
+
+        orig_dump = orig_cert.dump()
+
+        decoded_cert = Certificate.load(orig_dump)
+
+        self.assertEqual(decoded_cert.dump(), orig_dump)
+        self.assertEqual(orig_cert['tbsCertificate'].dump(), decoded_cert['tbsCertificate'].dump())  # This is what we need for signatures
+        self.assertEqual(orig_cert['cACalcValue'].dump(), decoded_cert[ 'cACalcValue'].dump())  # This is what we need for signatures
+
+        verifier = CertificateVerifier(self.public)
+
+        self.assertTrue(verifier.verify(orig_cert))
+        self.assertTrue(verifier.verify(decoded_cert))

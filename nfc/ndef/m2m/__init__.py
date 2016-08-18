@@ -763,11 +763,11 @@ def generate_ec_private_key(curve='prime256v1', private_key_path='private.pem'):
 def extract_ec_public_key(private_key_path='private.pem', public_key_path='public.pem'):
     """openssl ec -in private.pem -pubout -out public.pem"""
     proc = subprocess.Popen(
-        ['openssl', 'ec', '-in', private_key_path, '-pubout', public_key_path],
+        ['openssl', 'ec', '-in', private_key_path, '-pubout', '-out', public_key_path],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (out, err) = proc.communicate()
 
-    if not err:
+    if err == b'read EC key\nwriting EC key\n':  # This is normal. You'd say this is what should be in out, but this text is in err
         with open(public_key_path, 'rb') as signature_file:
             signature = signature_file.read()
             return signature
