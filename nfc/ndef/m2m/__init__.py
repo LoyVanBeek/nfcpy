@@ -69,10 +69,9 @@ import sys
 import textwrap
 import time
 
-from asn1crypto import x509, keys, core
-from asn1crypto.util import int_to_bytes, int_from_bytes, timezone
+from asn1crypto.util import int_to_bytes, int_from_bytes
 from asn1crypto.core import CLASS_NAME_TO_NUM_MAP
-from oscrypto import asymmetric, util
+import random
 
 from asn1crypto.core import Sequence, SequenceOf, ObjectIdentifier, Boolean, OctetString, Choice, \
     PrintableString, UTF8String, IA5String, Integer
@@ -636,7 +635,7 @@ class CertificateBuilder(object):
 
         if self.serial_number is None:
             time_part = int_to_bytes(int(time.time()))
-            random_part = util.rand_bytes(4)
+            random_part = random.getrandbits(24)  # Must contain at least 20 randomly generated BITS
             self.serial_number = int_from_bytes(time_part + random_part)
 
         # Only re non-optionals are always in this dict
@@ -869,7 +868,7 @@ if __name__ == "__main__":
     builder.ca_algorithm_parameters = base64.decodebytes(b'BggqhkjOPQMBBw==') # EC PARAMETERS
     # Parameters for the elliptic curve: http://oid-info.com/get/1.2.840.10045.3.1.7
     builder.self_signed = True #builder.issuer = subject
-    builder.pk_algorithm = pKAlgorithm="1.2.840.10045.4.3.2"  # Same as cAAlgorithm
+    builder.pk_algorithm = "1.2.840.10045.4.3.2"  # Same as cAAlgorithm
     builder.subject_key_id = int(1).to_bytes(1, byteorder='big')
     builder.key_usage = 0b10100000.to_bytes(1, byteorder='big') # digitalSignature & keyEncipherment bit set
     # builder.basicConstraints =  # Omit if end-entity cert
