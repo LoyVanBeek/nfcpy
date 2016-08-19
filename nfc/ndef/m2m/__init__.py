@@ -120,17 +120,17 @@ class AttributeValue(Choice):
     }
     """
     _alternatives = [
-        ('country', PrintableString),
-        ('organization', UTF8String),
-        ('organizationalUnit', UTF8String),
-        ('distinguishedNameQualifier', PrintableString),
-        ('stateOrProvince', UTF8String),
-        ('locality', UTF8String),
-        ('commonName', UTF8String),
-        ('serialNumber', PrintableString),
-        ('domainComponent', IA5String),
-        ('registeredId', ObjectIdentifier),
-        ('octetsName', OctetString),
+        ('country', PrintableString,                    {'tag':0, 'tag_type':'implicit'}),
+        ('organization', UTF8String,                    {'tag':1, 'tag_type':'implicit'}),
+        ('organizationalUnit', UTF8String,              {'tag':2, 'tag_type':'implicit'}),
+        ('distinguishedNameQualifier', PrintableString, {'tag':3, 'tag_type':'implicit'}),
+        ('stateOrProvince', UTF8String,                 {'tag':4, 'tag_type':'implicit'}),
+        ('locality', UTF8String,                        {'tag':5, 'tag_type':'implicit'}),
+        ('commonName', UTF8String,                      {'tag':6, 'tag_type':'implicit'}),
+        ('serialNumber', PrintableString,               {'tag':7, 'tag_type':'implicit'}),
+        ('domainComponent', IA5String,                  {'tag':8, 'tag_type':'implicit'}),
+        ('registeredId', ObjectIdentifier,              {'tag':9, 'tag_type':'implicit'}),
+        ('octetsName', OctetString,                     {'tag':10, 'tag_type':'implicit'}),
     ]
 
 
@@ -154,12 +154,12 @@ class GeneralName(Choice):
     }
     """
     _alternatives = [
-        ('rfc822Name', IA5String),
-        ('dNSName',    IA5String),
-        ('directoryName', Name),
-        ('uniformResourceIdentifier', IA5String),
-        ('iPAddress', OctetString),
-        ('registeredID', ObjectIdentifier),
+        ('rfc822Name', IA5String,               {'tag':0, 'tag_type':'implicit'}),
+        ('dNSName',    IA5String,               {'tag':1, 'tag_type':'implicit'}),
+        ('directoryName', Name,                 {'tag':2, 'tag_type':'implicit'}),
+        ('uniformResourceIdentifier', IA5String,{'tag':3, 'tag_type':'implicit'}),
+        ('iPAddress', OctetString,              {'tag':4, 'tag_type':'implicit'}),
+        ('registeredID', ObjectIdentifier,      {'tag':5, 'tag_type':'implicit'}),
     ]
 
 
@@ -172,9 +172,10 @@ class AuthkeyID(Sequence):
     }
     """
     _fields = [
-        ('keyIdentified', OctetString, {'optional':True}),
-        ('authCertIssuer', GeneralName, {'optional':True}),
-        ('authCertSerialNum', OctetString, {'optional':True}),
+        ('keyIdentified', OctetString, {'optional':True, 'tag':0, 'tag_type':'implicit'}),
+        # A type of Choice (GeneralName) must always be explicitly tagged (says asn1crypto)
+        ('authCertIssuer', GeneralName, {'optional':True, 'tag':1, 'tag_type':'explicit'}),
+        ('authCertSerialNum', OctetString, {'optional':True, 'tag':2, 'tag_type':'implicit'}),
     ]
 
 
@@ -183,6 +184,7 @@ class Version(Integer):
     #     0: 'v1',
     # }
     pass
+
 
 class CaPkAlgorithm(ObjectIdentifier):
     _map = {'2.16.840.1.114513.1.0': 'ecdsa-with-sha256-secp192r1',
@@ -196,6 +198,7 @@ class CaPkAlgorithm(ObjectIdentifier):
             '2.16.840.1.114513.1.8': 'rsa-with-sha256',
             '2.16.840.1.114513.1.9': 'ecdsa-with-sha256-secp256r1',
             '2.16.840.1.114513.1.10': 'ecqv-with-sha256-secp256r1',}
+
 
 class TBSCertificate(Sequence):
     """
