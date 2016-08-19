@@ -5,8 +5,8 @@ from asn1crypto.core import Choice, ObjectIdentifier, Boolean, OctetString
 class DummyChoice(Choice):
     _alternatives = [
         ('oid0', ObjectIdentifier,  {'tag':0, 'tag_type':'implicit'}),
-        # Interestingly, setting 'default':False (or True) for bool1 makes the unittest fail
-        ('bool1', Boolean,          {'tag':1, 'tag_type':'implicit'}),
+        # Setting 'default':False (or True) does not affect the unittest, while is DOES in DummySequence
+        ('bool1', Boolean,          {'tag':1, 'tag_type':'implicit', 'default':False}),
         ('octets2', OctetString,    {'tag':2, 'tag_type':'implicit'}),
     ]
 

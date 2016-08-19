@@ -54,15 +54,10 @@ class TestPartialDummySequenceCanBeEncodedAndDecoded(unittest.TestCase):
 
         decoded = DummySequence.load(dummy_dump)
 
-        # import pprint
-        # pprint.pprint(dummy_seq.native)
-        # print("-"*10)
-        # pprint.pprint(decoded.native)
-        # self.assertEqual(dummy_seq.native, decoded.native)
-
-        # self.assertEqual(decoded.native['oid0'], None)
         self.assertEqual(decoded.native['bool1'], False)
         self.assertEqual(decoded.native['octets2'], bytes([5, 6, 7, 8]))
+
+        self.assertEqual(decoded.native['oid0'], None) # This was not even defined
 
 
 if __name__ == '__main__':
