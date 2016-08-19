@@ -184,6 +184,7 @@ class TestCryptography(unittest.TestCase):
 
         self.assertEqual(decoded_cert.dump(), orig_dump)
         self.assertEqual(self.orig_cert['tbsCertificate'].dump(), decoded_cert['tbsCertificate'].dump())  # This is what we need for signatures
+        self.assertEqual(self.orig_cert['tbsCertificate']['pubKey'].dump(), decoded_cert['tbsCertificate']['pubKey'].dump())  # This is what we need for signatures
         self.assertEqual(self.orig_cert['cACalcValue'].dump(), decoded_cert[ 'cACalcValue'].dump())  # This is what we need for signatures
 
         verifier = CertificateVerifier(self.public)

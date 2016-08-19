@@ -697,8 +697,8 @@ class CertificateBuilder(object):
         # assert verify_signature(bytes_to_sign, signature, "public.pem")
 
         if debug:
-            print("Signed_bytes ({len}): {content}".format(len=len(bytes_to_sign), content=hexlify(bytes_to_sign)))
-            print("Build - Signature ({len}): {content}".format(len=len(signature), content=hexlify(signature)))
+            print("Build  - Signed_bytes ({len}): {content}".format(len=len(bytes_to_sign), content=hexlify(bytes_to_sign)))
+            print("Build  - Signature ({len}): {content}".format(len=len(signature), content=hexlify(signature)))
 
 
         return Certificate({
@@ -868,7 +868,7 @@ class CertificateVerifier(object):
         signature = octet_string.native  # We want to content of the octet string, which happens to be ASN.1 encoded as well; A sequence of 2 ints in case of ECDSA
 
         if debug:
-            print("Signed_bytes ({len}): {content}".format(len=len(signed_bytes), content=hexlify(signed_bytes)))
+            print("Verify - Signed_bytes ({len}): {content}".format(len=len(signed_bytes), content=hexlify(signed_bytes)))
             print("Verify - Signature ({len}): {content}".format(len=len(signature), content=hexlify(signature)))
 
         return verify_signature(signed_bytes, signature, self.public_key_path)
