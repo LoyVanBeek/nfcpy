@@ -75,7 +75,6 @@ import random
 
 from asn1crypto.core import Sequence, SequenceOf, ObjectIdentifier, Boolean, OctetString, Choice, \
     PrintableString, UTF8String, IA5String, Integer
-from asn1crypto.x509 import ExtensionId
 
 from binascii import hexlify
 
@@ -91,7 +90,7 @@ class Extension(Sequence):
     }
     """
     _fields = [
-        ('extnID', ExtensionId),
+        ('extnID', ObjectIdentifier),
         ('criticality', Boolean, {'default': False}),
         ('extnValue', OctetString),
     ]
