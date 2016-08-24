@@ -45,5 +45,5 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
 
-    install_requires = ['libusb1', 'pyserial', 'ecdsa', 'cryptography'],
+    install_requires = ['libusb1', 'pyserial'],
 )

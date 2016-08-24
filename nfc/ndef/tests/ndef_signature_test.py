@@ -1,7 +1,6 @@
 import unittest
 import random
 
-import ecdsa
 from ..signature import SignatureRecord, SignatureType, CertificateFormat, HashType
 from ..record import Record
 from ..message import Message
