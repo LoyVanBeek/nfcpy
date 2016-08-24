@@ -4,7 +4,10 @@ Technical Specification
 Version 2.0
 2014-11-26
 [SIGNATURE]
-NFC Forum"""
+NFC Forum
+
+The M2M certificate implementation is a separate module, not included in this project.
+One implementation is at https://github.com/LoyVanBeek/m2m_certificates"""
 
 from enum import Enum
 import ecdsa
