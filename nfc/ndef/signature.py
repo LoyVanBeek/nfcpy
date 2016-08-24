@@ -10,7 +10,6 @@ The M2M certificate implementation is a separate module, not included in this pr
 One implementation is at https://github.com/LoyVanBeek/m2m_certificates"""
 
 from enum import Enum
-import ecdsa
 import io
 
 from .record import Record
@@ -49,15 +48,9 @@ class SignatureRecord(Record):
     >>> record1 = Record(...)
     >>> sig = SignatureRecord(...)
     >>> message = Message(record1, sig) # TODO: Take into account that the ME flag of a record must be considered as zero when signing
-    >>> sig.sign(record1.to_bytes(), "private_key.pem")
+    >>> sig.signature = ...
     >>>
     """
-
-    _ecdsa_mapping = {  SignatureType.ECDSA_DSS_P256: ecdsa.NIST256p,
-                        SignatureType.ECDSA_DSS_P192: ecdsa.NIST192p,
-                        SignatureType.ECDSA_DSS_P224: ecdsa.NIST224p}
-
-    _mappings = _ecdsa_mapping # + other mappings
 
     RECORD_TYPE = 'urn:nfc:wkt:Sig'
 
@@ -112,55 +105,6 @@ class SignatureRecord(Record):
             self.hash_type = hash_type if signature_type != SignatureType.NoSignaturePresent else None
             self.signature = signature
             self.next_certificate_uri = next_certificate_uri
-
-    def sign(self, data_to_sign, pem_file=None, der_file=None, key_str_curve=None):
-        """
-        Calculate the signature for the data_to_sign
-        :param data_to_sign: bytes of which to calculate a signature
-        :param pem_file: path to .pem file containing a private key
-        :param der_file: path to a DER encoded file containing a private key
-        :param key_str_curve: tuple of a private key and its curve. E.g. (ecdsa.SigningKey.generate(curve=ecdsa.NIST256p), ecdsa.NIST256p)
-        :return:
-        """
-        if self.signature_type in self._ecdsa_mapping:
-            if pem_file:
-                sk = ecdsa.SigningKey.from_pem(pem_file) #.generate(curve=self._ecdsa_mapping[self.signature_type])
-            elif der_file:
-                sk = ecdsa.SigningKey.from_der(der_file)
-            elif key_str_curve:
-                sk = ecdsa.SigningKey.from_string(key_str_curve[0], curve=key_str_curve[1])
-            else:
-                raise TypeError("Specify at least a one of pem_file, der_file or key_str")
-
-            signature = sk.sign(data_to_sign)
-        else:
-            raise NotImplementedError("SignatureType {sigtype} not yet implemented. Available types are {available}".format(sigtype=self.signature_type,
-                                                                                                                            available=self._mappings))
-        self.signature = signature
-        return signature
-
-    def verify(self, data_to_verify, pem_file=None, der_file=None, key_str_curve=None):
-        """Check whether this signature matches with the data to verify
-        :param pem_file: path to .pem file containing a public key
-        :param der_file: path to a DER encoded file containing a public key
-        :param key_str_curve: tuple of a public key and its curve. E.g. (ecdsa.SigningKey.generate(curve=ecdsa.NIST256p), ecdsa.NIST256p)
-        """
-        if self.signature_type in self._ecdsa_mapping:
-            if pem_file:
-                vk = ecdsa.VerifyingKey.from_pem(pem_file) #.generate(curve=self._ecdsa_mapping[self.signature_type])
-            elif der_file:
-                vk = ecdsa.VerifyingKey.from_der(der_file)
-            elif key_str_curve:
-                vk = ecdsa.VerifyingKey.from_string(key_str_curve[0], curve=key_str_curve[1])
-            else:
-                raise TypeError("Specify at least a one of pem_file, der_file or key_str")
-            try:
-                return vk.verify(self.signature, data_to_verify)
-            except ecdsa.BadSignatureError:
-                return False
-        else:
-            raise NotImplementedError("SignatureType {sigtype} not yet implemented. Available types are {available}".format(sigtype=self.signature_type,
-                                                                                                                            available=self._mappings))
 
     @property
     def data(self):
