@@ -30,7 +30,7 @@ import time
 import argparse
 
 sys.path.insert(1, os.path.split(sys.path[0])[0])
-from .cli import CommandLineInterface
+from cli import CommandLineInterface
 
 import nfc
 import nfc.snep

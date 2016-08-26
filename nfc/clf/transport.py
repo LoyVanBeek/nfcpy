@@ -179,10 +179,10 @@ class USB(object):
                 log.debug("path matches {0!r}".format(regex.pattern))
                 if regex is usb_vid_pid:
                     match = [int(s.strip(':'), 16) for s in m.groups() if s]
-                    match = dict(list(zip(['vid', 'pid'], match)))
+                    match = dict(zip(['vid', 'pid'], match))
                 if regex is usb_bus_dev:
                     match = [int(s.strip(':'), 10) for s in m.groups() if s]
-                    match = dict(list(zip(['bus', 'adr'], match)))
+                    match = dict(zip(['bus', 'adr'], match))
                 if regex is usb_or_none:
                     match = dict()
                 break
@@ -230,7 +230,7 @@ class USB(object):
             raise IOError(errno.ENODEV, os.strerror(errno.ENODEV))
         
         try:
-            first_setting = next(dev.iterSettings())
+            first_setting = dev.iterSettings().next()
         except StopIteration:
             log.error("no usb configuration settings, please replug device")
             raise IOError(errno.ENODEV, os.strerror(errno.ENODEV))

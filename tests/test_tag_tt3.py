@@ -58,7 +58,7 @@ class Type3TagSimulator(nfc.clf.ContactlessFrontend):
         return nfc.clf.TTF(424, self.idm, self.pmm, self.sys[0])
 
     def exchange(self, data, timeout):
-        print(hexlify(data))
+        print hexlify(data)
         self.cmd_counter += 1
         if self.tag_is_present is False:
             raise nfc.clf.TimeoutError("mute tag")
@@ -277,7 +277,7 @@ class TestType3Tag:
     #
     def test_dump_ndef_data_area(self):
         lines = self.tag.dump()
-        print(("\n".join(lines)))
+        print("\n".join(lines))
         assert len(lines) == 8
 
     def test_dump_non_ndef_tag(self):
@@ -290,7 +290,7 @@ class TestType3Tag:
     #
     def test_format_default_arguments(self):
         assert self.tag.format() == True
-        print(("\n".join(self.tag.dump())))
+        print("\n".join(self.tag.dump()))
         assert self.clf.mem[0x0009][0][0x00] == 0x10
         assert self.clf.mem[0x0009][0][0x01] == 0x0A
         assert self.clf.mem[0x0009][0][0x02] == 0x0A
@@ -311,7 +311,7 @@ class TestType3Tag:
     def test_format_tag_with_nbr_6_and_nbw_4(self):
         self.clf.nbr, self.clf.nbw = (6, 4)
         assert self.tag.format() == True
-        print(("\n".join(self.tag.dump())))
+        print("\n".join(self.tag.dump()))
         assert self.clf.mem[0x0009][0][0x00] == 0x10
         assert self.clf.mem[0x0009][0][0x01] == 0x06
         assert self.clf.mem[0x0009][0][0x02] == 0x04
@@ -321,7 +321,7 @@ class TestType3Tag:
     def test_format_tag_with_nbr_4_and_nbw_6(self):
         self.clf.nbr, self.clf.nbw = (4, 6)
         assert self.tag.format() == True
-        print(("\n".join(self.tag.dump())))
+        print("\n".join(self.tag.dump()))
         assert self.clf.mem[0x0009][0][0x00] == 0x10
         assert self.clf.mem[0x0009][0][0x01] == 0x04
         assert self.clf.mem[0x0009][0][0x02] == 0x04
@@ -718,7 +718,7 @@ class TestType3TagFelicaMobile:
     idm = "01 02 03 04 05 06 07 08"
     
     def test_init_with_ic_code(self):
-        for ic in [6, 7] + list(range(16, 32)):
+        for ic in [6, 7] + range(16, 32):
             yield self.check_init_with_ic_code, ic
 
     def check_init_with_ic_code(self, ic):
@@ -791,7 +791,7 @@ class TestType3TagFelicaLite:
 
     def test_dump(self):
         lines = self.tag.dump()
-        print("\n".join(lines))
+        print "\n".join(lines)
         assert len(lines) == 15
 
     def test_read_ndef_without_authentication(self):
@@ -819,16 +819,16 @@ class TestType3TagFelicaLite:
         assert self.clf.mem[9][1][10:16] == "cd.org"
 
     def test_generate_mac_with_flip_key_false(self):
-        data = str(bytearray(list(range(32))))
-        key = str(bytearray(list(range(16))))
-        iv = str(bytearray(list(range(8))))
+        data = str(bytearray(range(32)))
+        key = str(bytearray(range(16)))
+        iv = str(bytearray(range(8)))
         mac = nfc.tag.tt3_sony.FelicaLite.generate_mac(data, key, iv)
         assert mac == str(bytearray.fromhex("0b1268d7a4ac6932"))
 
     def test_generate_mac_with_flip_key_true(self):
-        data = str(bytearray(list(range(32))))
-        key = str(bytearray(list(range(16))))
-        iv = str(bytearray(list(range(8))))
+        data = str(bytearray(range(32)))
+        key = str(bytearray(range(16)))
+        iv = str(bytearray(range(8)))
         mac = nfc.tag.tt3_sony.FelicaLite.generate_mac(data, key, iv, True)
         assert mac == str(bytearray.fromhex("18cdd33c0fb25dd7"))
 
@@ -1020,7 +1020,7 @@ class TestType3TagFelicaLiteS:
 
     def test_dump(self):
         lines = self.tag.dump()
-        print("\n".join(lines))
+        print "\n".join(lines)
         assert len(lines) == 18
 
     def test_read_ndef_without_authentication(self):

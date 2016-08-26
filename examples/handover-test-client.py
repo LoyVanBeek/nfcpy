@@ -30,7 +30,7 @@ import argparse
 import random
 
 sys.path.insert(1, os.path.split(sys.path[0])[0])
-from .cli import CommandLineInterface, TestFail
+from cli import CommandLineInterface, TestFail
 
 import nfc
 import nfc.llcp
@@ -75,7 +75,7 @@ class BluetoothAdapter(object):
 
     @property
     def service_uuids(self):
-        return list(map(str, self.adapter.GetProperties()["UUIDs"]))
+        return map(str, self.adapter.GetProperties()["UUIDs"])
 
     def get_ssp_data(self):
         ssp_hash, ssp_rand = self.oob_adapter.ReadLocalData()

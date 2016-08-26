@@ -129,7 +129,7 @@ class Device(object):
         raise NotImplementedError("%s.%s() must be implemented"%(cname,fname))
         
     def __str__(self):
-        n = list(filter(bool,(self.vendor_name,self.product_name,self.chipset_name)))
+        n = filter(bool,(self.vendor_name,self.product_name,self.chipset_name))
         return ' '.join(n) + " at " + self.path
         
     @property

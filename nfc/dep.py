@@ -21,14 +21,13 @@
 # -----------------------------------------------------------------------------
 
 import logging
-
 log = logging.getLogger(__name__)
 
 import os
 import time
 import collections
 
-from . import clf
+import nfc.clf
 
 class DataExchangeProtocol(object):
     class Counter(object):
@@ -46,7 +45,7 @@ class DataExchangeProtocol(object):
         
         def __str__(self):
             s = "sent/rcvd {0}/{1}".format(self.sent_count, self.rcvd_count)
-            for name in sorted(set(list(self.sent.keys()) + list(self.rcvd.keys()))):
+            for name in sorted(set(self.sent.keys() + self.rcvd.keys())):
                 s += " {name} {sent}/{rcvd}".format(
                     name=name, sent=self.sent[name], rcvd=self.rcvd[name])
             return s
@@ -116,27 +115,27 @@ class Initiator(DataExchangeProtocol):
         
         if self.target is None and self.acm is True:
             log.debug("searching active communication mode target at 106A")
-            target = clf.RemoteTarget("106A", atr_req=atr_req.encode())
+            target = nfc.clf.RemoteTarget("106A", atr_req=atr_req.encode())
             try:
                 target = self.clf.sense(target,iterations=2,interval=0.1)
                 if target: atr_res = ATR_RES.decode(target.atr_res)
-            except clf.UnsupportedTargetError:
+            except nfc.clf.UnsupportedTargetError:
                 self.acm = False
-            except clf.CommunicationError:
+            except nfc.clf.CommunicationError:
                 pass
             else:
                 self.target = target
 
         if self.target is None:
             log.debug("searching passive communication mode target at 106A")
-            target = clf.RemoteTarget("106A")
+            target = nfc.clf.RemoteTarget("106A")
             target = self.clf.sense(target, iterations=2, interval=0.1)
             if target and target.sel_res and bool(target.sel_res[0] & 0x40):
                 self.target = target
 
         if self.target is None and self.brs > 0:
             log.debug("searching passive communication mode target at 212F")
-            target = clf.RemoteTarget("212F", sensf_req=b'\0\xFF\xFF\0\0')
+            target = nfc.clf.RemoteTarget("212F", sensf_req=b'\0\xFF\xFF\0\0')
             target = self.clf.sense(target, iterations=2, interval=0.1)
             if target and target.sensf_res.startswith(b'\1\1\xFE'):
                 atr_req.nfcid3 = target.sensf_res[1:9] + b'ST'
@@ -144,7 +143,7 @@ class Initiator(DataExchangeProtocol):
 
         if self.target and self.target.atr_res is None:
             try: atr_res = self.send_req_recv_res(atr_req, 1.0)
-            except clf.CommunicationError: pass
+            except nfc.clf.CommunicationError: pass
             if atr_res is None:
                 log.debug("NFC-DEP Attribute Request failed")
                 return None
@@ -152,7 +151,7 @@ class Initiator(DataExchangeProtocol):
         if self.target and atr_res:
             if self.brs > (0 if self.target.brty == '106A' else 1):
                 try: psl_res = self.send_req_recv_res(psl_req, 0.1)
-                except clf.CommunicationError: pass
+                except nfc.clf.CommunicationError: pass
                 if psl_res is None:
                     log.debug("NFC-DEP Parameter Selection failed")
                     return None
@@ -171,7 +170,7 @@ class Initiator(DataExchangeProtocol):
         try:
             req = RLS_REQ(self.did) if release else DSL_REQ(self.did)
             res = self.send_req_recv_res(req, 0.1)
-        except clf.CommunicationError:
+        except nfc.clf.CommunicationError:
             return
         else:
             if type(res) != (RLS_RES if release else DSL_RES):
@@ -195,7 +194,7 @@ class Initiator(DataExchangeProtocol):
         def RTOX(rtox, did, nad):
             if rtox < 1 or rtox > 59:
                 error = "NFC-DEP RTOX must be in range 1 to 59"
-                raise clf.ProtocolError(error)
+                raise nfc.clf.ProtocolError(error)
             pdu_type = DEP_REQ.TimeoutExtension
             pfb = DEP_REQ.PFB(pdu_type, nad is not None, did is not None, 0)
             return DEP_REQ(pfb, did, nad, data=bytearray([rtox]))
@@ -216,19 +215,19 @@ class Initiator(DataExchangeProtocol):
                     if res.pfb.fmt != DEP_RES.TimeoutExtension: break
                 else:
                     log.error("too many timeout extension requests")
-                    raise clf.TimeoutError("timeout extension")
+                    raise nfc.clf.TimeoutError("timeout extension")
             if res.pfb.fmt == DEP_RES.PositiveAck:
                 if not send_data:
                     error = "unexpected or out-of-sequence NFC-DEP ACK PDU"
-                    raise clf.ProtocolError(error)
+                    raise nfc.clf.ProtocolError(error)
             if res.pfb.pni != self.pni:
-                raise clf.ProtocolError("wrong NFC-DEP packet number")
+                raise nfc.clf.ProtocolError("wrong NFC-DEP packet number")
             self.pni = (self.pni + 1) & 0x3
         
         if (res.pfb.fmt != DEP_RES.LastInformation and
             res.pfb.fmt != DEP_RES.MoreInformation):
             error = "expected NFC-DEP INF PDU after sending"
-            raise clf.ProtocolError(error)
+            raise nfc.clf.ProtocolError(error)
         
         recv_data = res.data
         
@@ -244,13 +243,13 @@ class Initiator(DataExchangeProtocol):
                     if res.pfb.fmt != DEP_RES.TimeoutExtension: break
                 else:
                     log.error("too many timeout extension requests")
-                    raise clf.TimeoutError("timeout extension")
+                    raise nfc.clf.TimeoutError("timeout extension")
             if (res.pfb.fmt != DEP_RES.LastInformation and
                 res.pfb.fmt != DEP_RES.MoreInformation):
                 error = "NFC-DEP chaining not continued after ACK"
-                raise clf.ProtocolError(error)
+                raise nfc.clf.ProtocolError(error)
             if res.pfb.pni != self.pni:
-                raise clf.ProtocolError("wrong NFC-DEP packet number")
+                raise nfc.clf.ProtocolError("wrong NFC-DEP packet number")
             recv_data += res.data
             self.pni = (self.pni + 1) & 0x3
 
@@ -272,40 +271,40 @@ class Initiator(DataExchangeProtocol):
             req = ATN()
             for i in range(n_retry_atn):
                 timeout = min(rwt, deadline - time.time())
-                if timeout <= 0: raise clf.TimeoutError
+                if timeout <= 0: raise nfc.clf.TimeoutError
                 try:
                     res = self.send_req_recv_res(req, timeout)
-                except clf.CommunicationError:
+                except nfc.clf.CommunicationError:
                     continue
                 if res.pfb.fmt == DEP_RES.TimeoutExtension:
                     error = "received NFC-DEP RTOX response to NACK or ATN"
-                    raise clf.ProtocolError(error)
+                    raise nfc.clf.ProtocolError(error)
                 if res.pfb.fmt != DEP_RES.Attention:
                     error = "expected NFC-DEP Attention response"
-                    raise clf.ProtocolError(error)
+                    raise nfc.clf.ProtocolError(error)
                 return
             error = "unrecoverable NFC-DEP error in attention request"
-            raise clf.ProtocolError(error)
+            raise nfc.clf.ProtocolError(error)
             
         def request_retransmission(self, n_retry_nak, rwt, deadline):
             req = NAK(self.pni, self.did, self.nad)
             for i in range(n_retry_nak):
                 timeout = min(rwt, deadline - time.time())
-                if timeout <= 0: raise clf.TimeoutError
+                if timeout <= 0: raise nfc.clf.TimeoutError
                 try:
                     res = self.send_req_recv_res(req, timeout)
-                except clf.CommunicationError:
+                except nfc.clf.CommunicationError:
                     continue
                 if res.pfb.fmt == DEP_RES.TimeoutExtension:
                     error = "received NFC-DEP RTOX response to NACK or ATN"
-                    raise clf.ProtocolError(error)
+                    raise nfc.clf.ProtocolError(error)
                 expected = (DEP_RES.LastInformation, DEP_RES.MoreInformation)
                 if res.pfb.fmt not in expected:
                     error = "unrecoverable NFC-DEP transmission error"
-                    raise clf.ProtocolError(error)
+                    raise nfc.clf.ProtocolError(error)
                 return res
             error = "unrecoverable NFC-DEP error in retransmission request"
-            raise clf.ProtocolError(error)
+            raise nfc.clf.ProtocolError(error)
 
         if rwt > timeout:
             text = "response waiting time %.3f exceeds the timeout of %.3f sec"
@@ -314,20 +313,20 @@ class Initiator(DataExchangeProtocol):
         deadline = time.time() + timeout
         while True:
             timeout = min(rwt, deadline - time.time())
-            if timeout <= 0: raise clf.TimeoutError()
+            if timeout <= 0: raise nfc.clf.TimeoutError()
             try:
                 res = self.send_req_recv_res(req, timeout)
                 break
-            except clf.TimeoutError:
+            except nfc.clf.TimeoutError:
                 request_attention(self, 2, rwt, deadline)
                 continue
-            except clf.TransmissionError:
+            except nfc.clf.TransmissionError:
                 res = request_retransmission(self, 2, rwt, deadline)
                 break
 
         if res.pfb.fmt == DEP_RES.NegativeAck:
             error = "received NFC-DEP NACK PDU from Target"
-            raise clf.ProtocolError(error)
+            raise nfc.clf.ProtocolError(error)
         
         return res
         
@@ -342,7 +341,7 @@ class Initiator(DataExchangeProtocol):
         rsp = self.clf.exchange(cmd, timeout)
         res = self.decode_frame(rsp)
         if res.PDU_NAME[0:3] != req.PDU_NAME[0:3]:
-            raise clf.ProtocolError("invalid response for " + req.PDU_NAME)
+            raise nfc.clf.ProtocolError("invalid response for " + req.PDU_NAME)
         
         log.debug("<< {0}".format(res))
         pcnt_key = res.PDU_NAME[:3]
@@ -361,15 +360,15 @@ class Initiator(DataExchangeProtocol):
     def decode_frame(self, frame):
         if self.target.brty == '106A' and frame.pop(0) != 0xF0:
             error = "first NFC-DEP frame byte must be F0h for 106A"
-            raise clf.ProtocolError(error)
+            raise nfc.clf.ProtocolError(error)
         if len(frame) != frame.pop(0):
             error = "NFC-DEP frame length byte must be data length + 1"
-            raise clf.ProtocolError(error)
+            raise nfc.clf.ProtocolError(error)
         if len(frame) < 2:
             error = "NFC-DEP frame length byte must be from 3 to 255"
-            raise clf.TransmissionError(error)
+            raise nfc.clf.TransmissionError(error)
         if frame[0] != 0xD5 or frame[1] not in (1, 5, 7, 9, 11):
-            raise clf.ProtocolError("invalid NFC-DEP response code")
+            raise nfc.clf.ProtocolError("invalid NFC-DEP response code")
         res_name = {1: 'ATR', 5: 'PSL', 7: 'DEP', 9: 'DSL', 11: 'RLS'}
         return eval(res_name[frame[1]] + "_RES").decode(frame)
         
@@ -401,7 +400,7 @@ class Target(DataExchangeProtocol):
         atr_res = ATR_RES(nfcid3t, 0, 0, 0, rwt, pp, gbt)
         atr_res = atr_res.encode()
         
-        target = clf.LocalTarget(atr_res=atr_res)
+        target = nfc.clf.LocalTarget(atr_res=atr_res)
         target.sens_res = bytearray.fromhex("0101")
         target.sdd_res = bytearray.fromhex("08") + os.urandom(3)
         target.sel_res = bytearray.fromhex("40")
@@ -452,13 +451,13 @@ class Target(DataExchangeProtocol):
         deadline = time.time() + 1.0
         while time.time() < deadline:
             try: req = self.send_res_recv_req(res, deadline)
-            except clf.CommunicationError: return
+            except nfc.clf.CommunicationError: return
             if req is None: return
             if req.did == self.did:
                 if type(req) in (DSL_REQ, RLS_REQ):
                     RES = DSL_RES if type(req) == DSL_REQ else RLS_RES
                     try: self.send_res_recv_req(RES(self.did), 0)
-                    except clf.CommunicationError: pass
+                    except nfc.clf.CommunicationError: pass
                     return
                 if type(req) == DEP_REQ:
                     if req.pfb.fmt == DEP_REQ.Attention:
@@ -499,10 +498,10 @@ class Target(DataExchangeProtocol):
                 if more:
                     if req.pfb.fmt is not DEP_REQ.PositiveAck:
                         error = "expected ACK in NFC-DEP chaining"
-                        raise clf.ProtocolError(error)
+                        raise nfc.clf.ProtocolError(error)
                 self.pni = (self.pni + 1) & 0x3
                 if req.pfb.pni != self.pni:
-                    raise clf.ProtocolError("wrong NFC-DEP packet number")
+                    raise nfc.clf.ProtocolError("wrong NFC-DEP packet number")
                 del send_data[0:self.miu]
 
         recv_data = bytearray()
@@ -513,7 +512,7 @@ class Target(DataExchangeProtocol):
             if req is None: return None
             self.pni = (self.pni + 1) & 0x3
             if req.pfb.pni != self.pni:
-                raise clf.ProtocolError("wrong NFC-DEP packet number")
+                raise nfc.clf.ProtocolError("wrong NFC-DEP packet number")
             
         recv_data += req.data
         return str(recv_data)
@@ -577,7 +576,7 @@ class Target(DataExchangeProtocol):
                 timeout = deadline-time.time() if deadline > time.time() else 0
                 try:
                     frame = self.clf.exchange(frame, timeout=timeout)
-                except clf.TransmissionError:
+                except nfc.clf.TransmissionError:
                     frame = None
                 else:
                     break
@@ -601,15 +600,15 @@ class Target(DataExchangeProtocol):
     def decode_frame(self, frame):
         if self.target.brty == '106A' and frame.pop(0) != 0xF0:
             error = "first NFC-DEP frame byte must be F0h for 106A"
-            raise clf.ProtocolError(error)
+            raise nfc.clf.ProtocolError(error)
         if len(frame) != frame.pop(0):
             error = "NFC-DEP frame length byte must be data length + 1"
-            raise clf.ProtocolError(error)
+            raise nfc.clf.ProtocolError(error)
         if len(frame) < 2:
             error = "NFC-DEP frame length byte must be from 3 to 255"
-            raise clf.TransmissionError(error)
+            raise nfc.clf.TransmissionError(error)
         if frame[0] != 0xD4 or frame[1] not in (0, 4, 6, 8, 10):
-            raise clf.ProtocolError("invalid NFC-DEP command code")
+            raise nfc.clf.ProtocolError("invalid NFC-DEP command code")
         req_name = {0: 'ATR', 4: 'PSL', 6: 'DEP', 8: 'DSL', 10: 'RLS'}
         return eval(req_name[frame[1]] + "_REQ").decode(frame)
         
@@ -626,7 +625,7 @@ class ATR_REQ_RES(object):
         return (64, 128, 192, 254)[(self.pp >> 4) & 0x3]
     
 class ATR_REQ(ATR_REQ_RES):
-    PDU_CODE = bytearray(b"\xD4\x00")
+    PDU_CODE = bytearray('\xD4\x00')
     PDU_NAME = 'ATR-REQ'
     PDU_SHOW = "{self.PDU_NAME} NFCID3={nfcid3} DID={self.did:02x} "\
         "BS={self.bs:02x} BR={self.br:02x} PP={self.pp:02x} GB={gb}"
@@ -651,7 +650,7 @@ class ATR_REQ(ATR_REQ_RES):
         return data + self.gb
     
 class ATR_RES(ATR_REQ_RES):
-    PDU_CODE = bytearray(b"\xD5\x01")
+    PDU_CODE = bytearray('\xD5\x01')
     PDU_NAME = 'ATR-RES'
     PDU_SHOW = "{self.PDU_NAME} NFCID3={nfcid3} DID={self.did:02x} "\
         "BS={self.bs:02x} BR={self.br:02x} TO={self.to:02x} "\
@@ -690,10 +689,10 @@ class PSL_REQ_RES(object):
             try:
                 return cls(*data[2:])
             except ValueError:
-                raise clf.ProtocolError("invalid format of the " + cls.PDU_NAME)
+                raise ProtocolError("invalid format of the " + cls.PDU_NAME)
 
 class PSL_REQ(PSL_REQ_RES):
-    PDU_CODE = bytearray(b"\xD4\0x0")
+    PDU_CODE = bytearray('\xD4\x04')
     PDU_NAME = 'PSL-REQ'
     PDU_SHOW = "{name} DID={self.did} BRS={self.brs:02x}, FSL={self.fsl:02x}"
     
@@ -716,7 +715,7 @@ class PSL_REQ(PSL_REQ_RES):
         return (64, 128, 192, 254)[self.fsl & 0x03]
 
 class PSL_RES(PSL_REQ_RES):
-    PDU_CODE = bytearray(b"\xD5\x05")
+    PDU_CODE = bytearray('\xD5\x05')
     PDU_NAME = 'PSL-RES'
     PDU_SHOW = "{name} DID={self.did}"
     
@@ -763,7 +762,7 @@ class DEP_REQ_RES(object):
                 did = data.pop(0) if pfb.did else None
                 nad = data.pop(0) if pfb.nad else None
             except IndexError:
-                raise clf.ProtocolError("invalid format of the " + cls.PDU_NAME)
+                raise ProtocolError("invalid format of the " + cls.PDU_NAME)
             return cls(pfb, did, nad, data)
 
     def encode(self):
@@ -775,11 +774,11 @@ class DEP_REQ_RES(object):
         return data + self.data
 
 class DEP_REQ(DEP_REQ_RES):
-    PDU_CODE = bytearray(b"\xD4\x06")
+    PDU_CODE = bytearray('\xD4\x06')
     PDU_NAME = 'DEP-REQ'
     
 class DEP_RES(DEP_REQ_RES):
-    PDU_CODE = bytearray(b"\xD5\x07")
+    PDU_CODE = bytearray('\xD5\x07')
     PDU_NAME = 'DEP-RES'
     
 class DSL_REQ_RES(object):
@@ -793,27 +792,27 @@ class DSL_REQ_RES(object):
     def decode(cls, data):
         if data.startswith(cls.PDU_CODE):
             if len(data) > 3:
-                raise clf.ProtocolError("invalid format of the " + cls.PDU_NAME)
+                raise ProtocolError("invalid format of the " + cls.PDU_NAME)
             return cls(data[2] if len(data) == 3 else None)
         
     def encode(self):
         return self.PDU_CODE + ('' if self.did is None else chr(self.did))
     
 class DSL_REQ(DSL_REQ_RES):
-    PDU_CODE = bytearray(b"\xD4\x08")
+    PDU_CODE = bytearray('\xD4\x08')
     PDU_NAME = 'DSL-REQ'
     
 class DSL_RES(DSL_REQ_RES):
-    PDU_CODE = bytearray(b"\xD5\x09")
+    PDU_CODE = bytearray('\xD5\x09')
     PDU_NAME = 'DSL-RES'
 
 class RLS_REQ_RES(DSL_REQ_RES):
     pass
 
 class RLS_REQ(RLS_REQ_RES):
-    PDU_CODE = bytearray(b"\xD4\x0A")
+    PDU_CODE = bytearray('\xD4\x0A')
     PDU_NAME = 'RLS-REQ'
     
 class RLS_RES(RLS_REQ_RES):
-    PDU_CODE = bytearray(b"\xD5\x0B")
+    PDU_CODE = bytearray('\xD5\x0B')
     PDU_NAME = 'RLS-RES'

@@ -41,7 +41,7 @@ based on PN53x and uses nfcpy internal interfaces.
   --device PATH  local device search path [default: usb]
 
 """
-
+from __future__ import print_function
 
 import os
 import re
@@ -74,7 +74,7 @@ def main(args):
             chipset = clf.device.chipset
             
             regs = [("CIU_FIFOLevel", 0b10000000)] # clear fifo
-            regs.extend(list(zip(25*["CIU_FIFOData"], bytearray(25))))
+            regs.extend(zip(25*["CIU_FIFOData"], bytearray(25)))
             regs.extend([
                 ("CIU_Command",   0b00000001), # Configure command
                 ("CIU_Control",   0b00000000), # act as target (b4=0)

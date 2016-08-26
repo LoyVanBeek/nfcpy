@@ -20,7 +20,7 @@
 # See the Licence for the specific language governing
 # permissions and limitations under the Licence.
 # -----------------------------------------------------------------------------
-
+from __future__ import print_function
 
 import logging
 log = logging.getLogger('main')
@@ -34,15 +34,15 @@ import argparse
 import hmac, hashlib
 
 sys.path.insert(1, os.path.split(sys.path[0])[0])
-from .cli import CommandLineInterface
+from cli import CommandLineInterface
 
 import nfc
 import nfc.clf
 import nfc.ndef
 
 def parse_version(string):
-    try: major_version, minor_version = list(map(int, string.split('.')))
-    except ValueError as AttributeError:
+    try: major_version, minor_version = map(int, string.split('.'))
+    except ValueError, AttributeError:
         msg = "%r is not a version string, expecting <int>.<int>"
         raise argparse.ArgumentTypeError(msg % string)
     if major_version < 0 or major_version > 15:
@@ -280,7 +280,7 @@ class TagTool(CommandLineInterface):
             parser, groups="rdwr card dbg clf")
 
     def on_rdwr_startup(self, targets):
-        if self.options.command in list(self.rdwr_commands.keys()):
+        if self.options.command in self.rdwr_commands.keys():
             print("** waiting for a tag **", file=sys.stderr)
             return targets
 

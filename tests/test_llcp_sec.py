@@ -92,8 +92,8 @@ def test_bv_cs1_calculate_session_key():
 @raises(nfc.llcp.sec.KeyAgreementError)
 def check_bi_cs1_public_key_wrong_size(ecpk_len):
     cipher = nfc.llcp.sec.CipherSuite1()
-    ecpk = bytearray(list(range(ecpk_len))) if ecpk_len is not None else None
-    cipher.calculate_session_key(ecpk, bytearray(list(range(8))))
+    ecpk = bytearray(range(ecpk_len)) if ecpk_len is not None else None
+    cipher.calculate_session_key(ecpk, bytearray(range(8)))
 
 def test_bi_cs1_public_key_wrong_size():
     test_vector = (None, 0, 63, 65)
@@ -103,9 +103,9 @@ def test_bi_cs1_public_key_wrong_size():
 @raises(nfc.llcp.sec.KeyAgreementError)
 def check_bi_cs1_random_nonce_wrong_size(rn_i_len, rn_t_len):
     cipher = nfc.llcp.sec.CipherSuite1()
-    ecpk = bytearray(list(range(64)))
-    rn_i = bytearray(list(range(rn_i_len))) if rn_i_len is not None else None
-    rn_t = bytearray(list(range(rn_t_len))) if rn_t_len is not None else None
+    ecpk = bytearray(range(64))
+    rn_i = bytearray(range(rn_i_len)) if rn_i_len is not None else None
+    rn_t = bytearray(range(rn_t_len)) if rn_t_len is not None else None
     cipher.calculate_session_key(ecpk, rn_i, rn_t)
 
 def test_bi_cs1_random_nonce_wrong_size():
@@ -120,7 +120,7 @@ def test_bi_cs1_random_nonce_wrong_size():
 @raises(nfc.llcp.sec.KeyAgreementError)
 def test_bi_cs1_public_key_not_on_curve():
     cipher = nfc.llcp.sec.CipherSuite1()
-    ecpk = bytearray(list(range(64)))
+    ecpk = bytearray(range(64))
     cipher.calculate_session_key(ecpk, bytearray(8))
 
 def check_bv_cs1_encrypt_decrypt(a, p):
