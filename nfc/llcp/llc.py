@@ -40,7 +40,7 @@ from . import err
 from . import opt
 from . import sec
 
-RAW_ACCESS_POINT, LOGICAL_DATA_LINK, DATA_LINK_CONNECTION = list(range(3))
+RAW_ACCESS_POINT, LOGICAL_DATA_LINK, DATA_LINK_CONNECTION = range(3)
 
 wks_map = {
     "urn:nfc:sn:sdp" : 1,
@@ -143,7 +143,7 @@ class ServiceDiscovery(object):
     def __init__(self, llc):
         self.llc = llc
         self.snl = dict()
-        self.tids = list(range(256))
+        self.tids = range(256)
         self.resp = threading.Condition(self.llc.lock)
         self.sent = dict()
         self.sdreq = collections.deque()
@@ -250,7 +250,7 @@ class LogicalLinkController(object):
         
         def __str__(self):
             s = "sent/rcvd {0}/{1}".format(self.sent_count, self.rcvd_count)
-            for name in set(list(self.sent.keys()) + list(self.rcvd.keys())):
+            for name in set(self.sent.keys() + self.rcvd.keys()):
                 s += " {name} {sent}/{rcvd}".format(
                     name=name, sent=self.sent[name], rcvd=self.rcvd[name])
             return s
@@ -290,7 +290,7 @@ class LogicalLinkController(object):
         
         send_pax = pdu.ParameterExchange()
         send_pax.version = (1, 3)
-        send_pax.wks = 1+sum([1<<sap for sap in list(self.snl.values()) if sap<15])
+        send_pax.wks = 1+sum([1<<sap for sap in self.snl.values() if sap<15])
         if self.cfg['recv-miu'] != 128:
             send_pax.miu = self.cfg['recv-miu']
         if self.cfg['send-lto'] != 100:
@@ -687,9 +687,9 @@ class LogicalLinkController(object):
             raise err.Error(errno.EINVAL)
         if addr_or_name is None:
             self._bind_by_none(socket)
-        elif type(addr_or_name) is int:
+        elif type(addr_or_name) is types.IntType:
             self._bind_by_addr(socket, addr_or_name)
-        elif type(addr_or_name) is bytes:
+        elif type(addr_or_name) is types.StringType:
             self._bind_by_name(socket, addr_or_name)
         else: raise err.Error(errno.EFAULT)
 
@@ -748,7 +748,7 @@ class LogicalLinkController(object):
             raise err.Error(errno.ENOTSOCK)
         if not isinstance(socket, tco.DataLinkConnection):
             raise err.Error(errno.EOPNOTSUPP)
-        if not type(backlog) == int:
+        if not type(backlog) == types.IntType:
             raise TypeError("backlog must be integer")
         if backlog < 0:
             raise ValueError("backlog mmust not be negative")
@@ -791,7 +791,7 @@ class LogicalLinkController(object):
             # FIXME: set socket send miu when activated
             socket.send_miu = self.cfg['send-miu']
             return socket.send(message, flags)
-        if not type(message) == bytes:
+        if not type(message) == types.StringType:
             raise TypeError("sendto() argument *message* must be a string")
         if isinstance(socket, tco.LogicalDataLink):
             if dest is None:

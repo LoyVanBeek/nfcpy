@@ -30,14 +30,14 @@ import os
 import sys
 import time
 import argparse
-import queue as queue
+import Queue as queue
 from threading import Thread
 
 import logging
 log = logging.getLogger('main')
 
 sys.path.insert(1, os.path.split(sys.path[0])[0])
-from .cli import CommandLineInterface
+from cli import CommandLineInterface
 
 import nfc
 import nfc.llcp

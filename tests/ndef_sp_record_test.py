@@ -50,7 +50,7 @@ def test_bv_attr_title():
     record.title["de"] = "Deutsch"
     assert record.title == {"en": "English", "de": "Deutsch"}
     record.title = {"en": "English"}
-    print(record.title)
+    print record.title
     assert record.title == {"en": "English"}
 
 def test_bv_attr_icons():

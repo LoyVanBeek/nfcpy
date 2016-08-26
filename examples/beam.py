@@ -34,7 +34,7 @@ import threading
 import mimetypes
 
 sys.path.insert(1, os.path.split(sys.path[0])[0])
-from .cli import CommandLineInterface
+from cli import CommandLineInterface
 
 import nfc
 import nfc.snep
@@ -83,8 +83,8 @@ def send_message(args, llc, message):
     elif args.timeit:
         transfer_time = time.time() - t0
         message_size = len(str(message))
-        print(("message sent in {0:.3f} seconds ({1} byte @ {2:.0f} byte/sec)"
-            .format(transfer_time, message_size, message_size/transfer_time)))
+        print("message sent in {0:.3f} seconds ({1} byte @ {2:.0f} byte/sec)"
+            .format(transfer_time, message_size, message_size/transfer_time))
 
 def add_send_link_parser(parser):
     parser.set_defaults(func=run_send_link_action)
@@ -166,7 +166,7 @@ def run_send_ndef_action(args, llc):
     elif args.select == "cycle":
         args.selected = (args.selected + 1) % len(args.ndef)
     elif args.select == "random":
-        args.selected = random.choice(list(range(len(args.ndef))))
+        args.selected = random.choice(range(len(args.ndef)))
 
     if args.selected < len(args.ndef):
         send_message(args, llc, args.ndef[args.selected])
@@ -199,7 +199,7 @@ def add_recv_print_parser(parser):
 
 def run_recv_print_action(args, llc, rcvd_ndef_msg):
     log.info('print ndef message {0!r}'.format(rcvd_ndef_msg.type))
-    print(rcvd_ndef_msg.pretty())
+    print rcvd_ndef_msg.pretty()
 
 def add_recv_save_parser(parser):
     parser.set_defaults(func=run_recv_save_action)

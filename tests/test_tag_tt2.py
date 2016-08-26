@@ -410,7 +410,7 @@ class TestNdef:
         assert self.tag.ndef.is_readable == True
         assert self.tag.ndef.capacity == self.ndef_capacity
         assert self.tag.ndef.length == self.ndef_length
-        print(self.tag.ndef.message.pretty())
+        print self.tag.ndef.message.pretty()
         assert self.tag.ndef.message == self.ndef_message
 
     def test_ndef_read_no_ndef_magic_byte(self):

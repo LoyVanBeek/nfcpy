@@ -99,7 +99,7 @@ class Type1TagSimulator(nfc.clf.ContactlessFrontend):
         if data[0] == 0x1B and data[10:] == self.uid: # WRITE-NE8
             data_slice = slice(data[1] * 8, (data[1] + 1) * 8)
             if data_slice.stop <= len(self.memory):
-                for a, i in zip(list(range(*data_slice.indices(0x800))),list(range(2,10))):
+                for a, i in zip(range(*data_slice.indices(0x800)),range(2,10)):
                     self.memory[a] |= data[i]
                 return bytearray([data[1]]) + self.memory[data_slice]
             else: return bytearray([data[1]]) + bytearray(8)
@@ -478,7 +478,7 @@ class TestTagProcedures:
 
     def test_dump_with_later_stop(self):
         lines = self.tag._dump(256)
-        print('\n'.join(lines))
+        print '\n'.join(lines)
         assert lines[-1] == "255: 00 00 00 00 00 00 00 00 |........|"
 
     def test_protect_with_default_arguments(self):
@@ -518,7 +518,7 @@ class TestTopaz:
         
     def test_dump(self):
         lines = self.tag.dump()
-        print('\n'.join(lines))
+        print '\n'.join(lines)
         assert len(lines) == 16
         assert lines[-1].startswith(" 14: 01 60 00 00 00 00 00 00")
 
@@ -610,7 +610,7 @@ class TestTopaz512:
         
     def test_dump(self):
         lines = self.tag.dump()
-        print('\n'.join(lines))
+        print '\n'.join(lines)
         assert len(lines) == 42
         assert lines[-1].startswith(" 63: 00 00 00 00 00 00 00 00")
 

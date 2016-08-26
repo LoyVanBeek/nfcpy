@@ -58,7 +58,7 @@ def main(args):
                 target = nfc.clf.RemoteTarget(brty)
                 if attributes:
                     for attr in map(str.strip, attributes.split(' ')):
-                        name, value = list(map(str.strip, attr.split('=')))
+                        name, value = map(str.strip, attr.split('='))
                         value = bytearray.fromhex(value)
                         setattr(target, name, value)
                 logging.debug("add to target list: %s", target)
@@ -68,7 +68,7 @@ def main(args):
             while True:
                 target = clf.sense(*targets, iterations=args.iterations,
                                    interval=args.interval)
-                print(("{0} {1}".format(time.strftime("%X"), target)))
+                print("{0} {1}".format(time.strftime("%X"), target))
                 
                 if (target and args.atr and target.brty in brty_for_dep and
                     ((target.sel_res and target.sel_res[0] & 0x40) or
@@ -92,31 +92,31 @@ def main(args):
                         target.atr_res = data
                         target.atr_req = atr_req
                     except nfc.clf.CommunicationError as error:
-                        print((repr(error) + " for NFC-DEP ATR_REQ"))
+                        print(repr(error) + " for NFC-DEP ATR_REQ")
                     except AssertionError:
-                        print(("invalid ATR_RES: %r" % str(data.encode("hex"))))
+                        print("invalid ATR_RES: %r" % str(data.encode("hex")))
                 
                 if target and target.atr_res:
                     did = target.atr_req[12]
                     psl = "06D404%02x1203" % did # PSL_REQ
                     rls = ("04D40A%02x"%did) if did else "03D40A"
                     if target.brty == "106A": psl = "F0" + psl
-                    psl, rls = list(map(bytearray.fromhex, (psl, rls)))
+                    psl, rls = map(bytearray.fromhex, (psl, rls))
                     try: clf.exchange(psl, 1.0)
                     except nfc.clf.CommunicationError as error:
-                        print((repr(error) + " for NFC-DEP PSL_REQ"))
+                        print(repr(error) + " for NFC-DEP PSL_REQ")
                     else:
                         target.brty = "424F"
                         try: clf.exchange(rls, 1.0)
                         except nfc.clf.CommunicationError as error:
-                            print((repr(error) + " for NFC-DEP RLS_REQ"))
+                            print(repr(error) + " for NFC-DEP RLS_REQ")
 
                 if (target and target.sensf_res and
                     target.sensf_res[1:3] != '\x01\xFE'):
                     request_system_code = "\x0A\x0C"+target.sensf_res[1:9]
                     try: clf.exchange(request_system_code, timeout=1.0)
                     except nfc.clf.CommunicationError as error:
-                        print((repr(error) + " for Request System Code Command"))
+                        print(repr(error) + " for Request System Code Command")
                 
                 if not args.repeat: break
                 time.sleep(args.waittime)
@@ -125,7 +125,7 @@ def main(args):
                 print("lost connection to local device")
             else: print(error)
         except nfc.clf.UnsupportedTargetError as error:
-            print(error)
+            print error
         except KeyboardInterrupt:
             pass
         finally:

@@ -68,7 +68,7 @@ removed listen.py exits with 3.
   listen.py dep --hce           # offer NFC-DEP Protocol and Type 4A Tag
 
 """
-
+from __future__ import print_function
 
 import os
 import re

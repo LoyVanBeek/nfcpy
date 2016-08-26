@@ -32,11 +32,11 @@ import struct
 import os.path
 import inspect
 import argparse
-import queue as queue
+import Queue as queue
 from threading import Thread, Lock
 
 sys.path.insert(1, os.path.split(sys.path[0])[0])
-from .cli import CommandLineInterface, TestFail
+from cli import CommandLineInterface, TestFail
 
 import nfc
 import nfc.ndef
@@ -551,8 +551,8 @@ if __name__ == '__main__':
     except IndexError: mode = None
 
     if mode is None or mode not in ("p2p", "tag"):
-        print(("{0} requires 'p2p' or 'tag' as first argument."
-              .format(sys.argv[0])))
+        print("{0} requires 'p2p' or 'tag' as first argument."
+              .format(sys.argv[0]))
     elif mode == "p2p":
         PhdcP2pAgentTest().run()
     elif mode == "tag":

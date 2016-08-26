@@ -48,48 +48,48 @@ def print_command(args):
         rcount = " [record {0}]".format(index+1) if len(message) > 1 else ""
         try:
             if record.type == "urn:nfc:wkt:T":
-                print(("Text Record" + rcount))
+                print("Text Record" + rcount)
                 record = nfc.ndef.TextRecord(record)
             elif record.type == "urn:nfc:wkt:U":
-                print(("URI Record" + rcount))
+                print("URI Record" + rcount)
                 record = nfc.ndef.UriRecord(record)
             elif record.type == "urn:nfc:wkt:Sp":
-                print(("Smartposter Record" + rcount))
+                print("Smartposter Record" + rcount)
                 record = nfc.ndef.SmartPosterRecord(record)
             elif record.type == "application/vnd.bluetooth.ep.oob":
-                print(("Bluetooth Configuration Record" + rcount))
+                print("Bluetooth Configuration Record" + rcount)
                 record = nfc.ndef.BluetoothConfigRecord(record)
             elif record.type == "application/vnd.wfa.wsc":
                 try:
                     record = nfc.ndef.WifiPasswordRecord(record)
-                    print(("WiFi Password Record" + rcount))
+                    print("WiFi Password Record" + rcount)
                 except nfc.ndef.DecodeError:
                     record = nfc.ndef.WifiConfigRecord(record)
-                    print(("WiFi Configuration Record" + rcount))
+                    print("WiFi Configuration Record" + rcount)
             elif record.type == "urn:nfc:wkt:Hr":
-                print(("Handover Request Record" + rcount))
+                print("Handover Request Record" + rcount)
                 record = nfc.ndef.handover.HandoverRequestRecord(record)
             elif record.type == "urn:nfc:wkt:Hs":
-                print(("Handover Select Record" + rcount))
+                print("Handover Select Record" + rcount)
                 record = nfc.ndef.handover.HandoverSelectRecord(record)
             elif record.type == "urn:nfc:wkt:Hc":
-                print(("Handover Carrier Record" + rcount))
+                print("Handover Carrier Record" + rcount)
                 record = nfc.ndef.handover.HandoverCarrierRecord(record)
             else:
-                print(("Unknown Record Type" + rcount))
+                print("Unknown Record Type" + rcount)
         except nfc.ndef.FormatError as e:
             log.error(e)
-        print((record.pretty(indent=2)))
+        print(record.pretty(indent=2))
 
     try:
         if message.type == "urn:nfc:wkt:Hr":
             message = nfc.ndef.HandoverRequestMessage(message)
             print("\nHandover Request Message")
-            print((message.pretty(indent=2) + '\n'))
+            print(message.pretty(indent=2) + '\n')
         elif message.type == "urn:nfc:wkt:Hs":
             message = nfc.ndef.HandoverSelectMessage(message)
             print("\nHandover Select Message")
-            print((message.pretty(indent=2) + '\n'))
+            print(message.pretty(indent=2) + '\n')
     except nfc.ndef.FormatError as e:
         log.error(e)
     
@@ -177,7 +177,7 @@ def make_wifipassword(args):
     import random, string, hashlib
     if args.password is None:
         printable = string.digits + string.letters + string.punctuation
-        args.password = ''.join([random.choice(printable) for i in range(32)])
+        args.password = ''.join([random.choice(printable) for i in xrange(32)])
     if args.password_id is None:
         args.password_id = random.randint(0x0010, 0xFFFF)
     pkhash = hashlib.sha256(args.pubkey.read()).digest()[0:20]
@@ -303,7 +303,7 @@ def make_bluetoothcfg(args):
     if args.name:
         record.local_device_name = args.name
     for index, service in enumerate(args.service):
-        for key, value in list(nfc.ndef.bt_record.service_class_uuid_map.items()):
+        for key, value in nfc.ndef.bt_record.service_class_uuid_map.items():
             if service.lower() == value.lower():
                 args.service[index] = key
                 break
@@ -312,7 +312,7 @@ def make_bluetoothcfg(args):
             except ValueError:
                 log.error("unrecognized service class '{0}', expected a "
                           "128-bit UUID string or one of:".format(service))
-                log.error(list(nfc.ndef.bt_record.service_class_uuid_map.values()))
+                log.error(nfc.ndef.bt_record.service_class_uuid_map.values())
                 sys.exit(1)
     record.service_class_uuid_list = args.service
     log.info(record.pretty())
@@ -357,7 +357,7 @@ def add_pack_parser(parser):
     
 def pack(args):
     if args.type == 'unknown':
-        print("guess mime type from file", file=sys.stderr)
+        print >> sys.stderr, "guess mime type from file"
         mimetype = mimetypes.guess_type(args.input.name, strict=False)[0]
         if mimetype is not None: args.type = mimetype
     if args.name is None:
@@ -366,19 +366,19 @@ def pack(args):
     data = args.input.read()
 
     if args.type == "text/plain":
-        print("text/plain ==> urn:nfc:wkt:T", file=sys.stderr)
+        print >> sys.stderr, "text/plain ==> urn:nfc:wkt:T"
         try:
             from guess_language import guessLanguage
-            print("guess language from text", file=sys.stderr)
+            print >> sys.stderr, "guess language from text"
             language = guessLanguage(data)
             if language == "UNKNOWN": language = "en"
         except ImportError:
             language = "en"
-        print("text language is '%s'" % language, file=sys.stderr)
+        print >> sys.stderr, "text language is '%s'" % language
         record = nfc.ndef.TextRecord(data, language=language)
         record.name = args.name
     else:
-        print("mime type is %s" % args.type, file=sys.stderr)
+        print >> sys.stderr, "mime type is %s" % args.type
         record = nfc.ndef.Record(args.type, args.name, data)
 
     message = nfc.ndef.Message(record)
@@ -416,7 +416,7 @@ def split(args):
         if not args.keepmf:
             record._message_begin = record._message_end = False
         if args.input.name == "<stdin>":
-            print((str(record).encode("hex")))
+            print(str(record).encode("hex"))
         else:
             fn = os.path.splitext(os.path.split(args.input.name)[1])
             fn = fn[0] + "-{0:03d}".format(index+1) + fn[1]

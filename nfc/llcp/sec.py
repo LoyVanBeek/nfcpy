@@ -300,7 +300,7 @@ class OpenSSLWrapper:
             # int EC_KEY_set_public_key_affine_coordinates(EC_KEY *key,
             #     BIGNUM *x, BIGNUM *y);
             r = OpenSSL.crypto.EC_KEY_set_public_key_affine_coordinates(
-                self, *list(map(OpenSSL.BIGNUM.bin2bn, (pubkey_x, pubkey_y))))
+                self, *map(OpenSSL.BIGNUM.bin2bn, (pubkey_x, pubkey_y)))
             if r != 1:
                 raise AssertionError("EC_KEY_set_public_key_affine_coordinates")
 

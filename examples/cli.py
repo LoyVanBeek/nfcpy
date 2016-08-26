@@ -55,7 +55,7 @@ def log_usb_device_access_denied(path):
             pid = open(sysfs + d + '/idProduct').read().strip()
             bus = int(open(sysfs + d + '/busnum').read().strip())
             dev = int(open(sysfs + d + '/devnum').read().strip())
-            if len(path) == 11 and [bus, dev] == list(map(int, path.split(':')[1:])):
+            if len(path) == 11 and [bus, dev] == map(int, path.split(':')[1:]):
                 break
             if len(path) == 13 and [vid, pid] == path.split(':')[1:]:
                 msg = "first match for path {path} is usb:{bus:03}:{dev:03}"
@@ -98,7 +98,7 @@ def log_usb_device_found_busy(path):
             pid = open(sysfs_device_entry + 'idProduct').read().strip()
             bus = int(open(sysfs_device_entry + 'busnum').read().strip())
             dev = int(open(sysfs_device_entry + 'devnum').read().strip())
-            if len(path) == 11 and [bus, dev] == list(map(int, path.split(':')[1:])):
+            if len(path) == 11 and [bus, dev] == map(int, path.split(':')[1:]):
                 break
             if len(path) == 13 and [vid, pid] == path.split(':')[1:]:
                 msg = "first match for path {path} is usb:{bus:03}:{dev:03}"
@@ -194,11 +194,11 @@ class CommandLineInterface(object):
             if self.options.test_all:
                 # get_test_method() yields a list of (line, name, docstr) tuples
                 test_methods = sorted(get_test_methods(self), key=itemgetter(0))
-                self.options.test = list(map(itemgetter(1), test_methods))
+                self.options.test = map(itemgetter(1), test_methods)
 
             if len(self.options.test) > 0 and self.options.select:
                 match = lambda name: re.match(self.options.select, name)
-                self.options.test = list(filter(match, self.options.test))
+                self.options.test = filter(match, self.options.test)
         
     def add_dbg_options(self, argument_parser):
         group = argument_parser.add_argument_group(
@@ -233,7 +233,7 @@ class CommandLineInterface(object):
             "--lto", type=int, default=500, metavar='',
             help="LLC Link Timeout in ms (default: %(default)s ms)")
         group.add_argument(
-            "--lsc", type=int, choices=list(range(3)), default=3, metavar='',
+            "--lsc", type=int, choices=range(3), default=3, metavar='',
             help="LLC Link Service Class (default: %(default)s)")
         group.add_argument(
             "--rwt", type=int, default=8, metavar='',
@@ -366,15 +366,15 @@ class CommandLineInterface(object):
             test_info = test_func.__doc__.splitlines()[0]
             try: test_name = "Test {0:02d}".format(test)
             except ValueError: test_name = test
-            print(("{0}: {1}".format(test_name, test_info)))
+            print("{0}: {1}".format(test_name, test_info))
             try:
                 test_func(*args)
             except (TestFail, AssertionError) as error:
-                print(("{0}: FAIL ({1})".format(test_name, error)))
+                print("{0}: FAIL ({1})".format(test_name, error))
             except TestSkip as error:
-                print(("{0}: SKIP ({1})".format(test_name, error)))
+                print("{0}: SKIP ({1})".format(test_name, error))
             else:
-                print(("{0}: PASS".format(test_name)))
+                print("{0}: PASS".format(test_name))
             if index < len(self.options.test) - 1:
                 time.sleep(1)
         self.test_completed = True

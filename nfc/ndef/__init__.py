@@ -27,16 +27,15 @@ Support for decoding and encoding of NFC Data Exchange Format (NDEF)
 records and messages.
 """
 
-from .error import *
-from .message import Message
-from .record import Record
-from .text_record import TextRecord
-from .uri_record import UriRecord
-from .smart_poster import SmartPosterRecord
-from .handover import HandoverRequestMessage
-from .handover import HandoverSelectMessage
-from .handover import HandoverCarrierRecord
-from .bt_record import BluetoothConfigRecord
-from .wifi_record import WifiConfigRecord
-from .wifi_record import WifiPasswordRecord
-from .signature import SignatureRecord, SignatureType, HashType
+from nfc.ndef.error import *
+from nfc.ndef.message import Message
+from nfc.ndef.record import Record
+from nfc.ndef.text_record import TextRecord
+from nfc.ndef.uri_record import UriRecord
+from nfc.ndef.smart_poster import SmartPosterRecord
+from nfc.ndef.handover import HandoverRequestMessage
+from nfc.ndef.handover import HandoverSelectMessage
+from nfc.ndef.handover import HandoverCarrierRecord
+from nfc.ndef.bt_record import BluetoothConfigRecord
+from nfc.ndef.wifi_record import WifiConfigRecord
+from nfc.ndef.wifi_record import WifiPasswordRecord
