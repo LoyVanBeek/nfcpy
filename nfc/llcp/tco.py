@@ -434,10 +434,10 @@ class DataLinkConnection(TransmissionControlObject):
                 if self.state.CONNECT:
                     raise err.Error(errno.EALREADY)
                 raise err.Error(errno.EPIPE)
-            if type(dest) is types.StringType:
+            if type(dest) is bytes:
                 send_pdu = pdu.Connect(1, self.addr, self.recv_miu,
                                        self.recv_win, dest)
-            elif type(dest) is types.IntType:
+            elif type(dest) is int:
                 send_pdu = pdu.Connect(dest, self.addr, self.recv_miu,
                                        self.recv_win)
             else:

@@ -30,7 +30,7 @@ class DecodeError(Error): pass
 class EncodeError(Error): pass
 
 class Parameter:
-    VERSION, MIUX, WKS, LTO, RW, SN, OPT, SDREQ, SDRES, ECPK, RN = range(1, 12)
+    VERSION, MIUX, WKS, LTO, RW, SN, OPT, SDREQ, SDRES, ECPK, RN = list(range(1, 12))
     
     @staticmethod
     def decode(data, offset, size):
@@ -435,7 +435,7 @@ class AggregatedFrameIterator(object):
         self._aggregate = aggregate
         self._current = 0
 
-    def next(self):
+    def __next__(self):
         if self._current == len(self._aggregate):
             raise StopIteration
         self._current += 1

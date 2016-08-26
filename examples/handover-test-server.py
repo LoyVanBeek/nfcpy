@@ -29,7 +29,7 @@ import time
 import argparse
 
 sys.path.insert(1, os.path.split(sys.path[0])[0])
-from cli import CommandLineInterface
+from .cli import CommandLineInterface
 
 import nfc
 import nfc.llcp
@@ -71,7 +71,7 @@ class BluetoothAdapter(object):
 
     @property
     def service_uuids(self):
-        return map(str, self.adapter.GetProperties()["UUIDs"])
+        return list(map(str, self.adapter.GetProperties()["UUIDs"]))
 
     def get_ssp_data(self):
         ssp_hash, ssp_rand = self.oob_adapter.ReadLocalData()
@@ -219,7 +219,7 @@ class TestProgram(CommandLineInterface):
         
         if handover_request.version.minor == 0 and self.options.quirks:
             log.warning("quirks: accept handover version 1.0 as 1.1")
-        elif handover_request.version.minor not in range(1,3):
+        elif handover_request.version.minor not in list(range(1,3)):
             log.warning("unsupported minor version")
             self.select_carrier_lock.release()
             return handover_select

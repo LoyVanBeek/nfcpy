@@ -18,6 +18,8 @@ with open(path.join(here, 'nfc', '__init__.py'), encoding='utf-8') as f:
         raise RuntimeError("Unable to find version string.")
     version_string = match.group(1)
 
+print(find_packages(exclude=['examples']))
+
 setup(
     name = 'nfcpy',
     version = version_string,

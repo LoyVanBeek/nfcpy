@@ -33,10 +33,10 @@ import os.path
 import inspect
 import argparse
 from threading import Thread
-import Queue as queue
+import queue as queue
 
 sys.path.insert(1, os.path.split(sys.path[0])[0])
-from cli import CommandLineInterface
+from .cli import CommandLineInterface
 
 import nfc
 import nfc.ndef

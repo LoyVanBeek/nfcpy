@@ -42,8 +42,8 @@ locate contactless devices connected to this machine.
 """
 
 def main(args):
-    print("This is the %s version of nfcpy run in Python %s\non %s" %
-          (nfc.__version__, platform.python_version(), platform.platform()))
+    print(("This is the %s version of nfcpy run in Python %s\non %s" %
+          (nfc.__version__, platform.python_version(), platform.platform())))
     print("I'm now searching your system for contactless devices")
     found = 0
     for vid, pid, bus, dev in nfc.clf.transport.USB.find("usb"):
@@ -51,7 +51,7 @@ def main(args):
             path = "usb:{0:03d}:{1:03d}".format(bus, dev)
             try:
                 clf = nfc.ContactlessFrontend(path)
-                print("** found %s" % clf.device)
+                print(("** found %s" % clf.device))
                 clf.close()
                 found += 1
             except IOError as error:
@@ -65,7 +65,7 @@ def main(args):
             path = "tty:{0}".format(dev[8:])
             try:
                 clf = nfc.ContactlessFrontend(path)
-                print("** found %s" % clf.device)
+                print(("** found %s" % clf.device))
                 clf.close()
                 found += 1
             except IOError as error:
@@ -83,7 +83,7 @@ def main(args):
 
 def usb_device_access_denied(bus, dev, vid, pid, path):
     info = "** found usb:{vid:04x}:{pid:04x} at {path} but access is denied"
-    print(info.format(vid=vid, pid=pid, path=path))
+    print((info.format(vid=vid, pid=pid, path=path)))
     if platform.system().lower() == "linux":
         devnode = "/dev/bus/usb/{0:03d}/{1:03d}".format(bus, dev)
         if not os.access(devnode, os.R_OK | os.W_OK):
@@ -101,40 +101,40 @@ def usb_device_access_denied(bus, dev, vid, pid, path):
                         '{action}'
             udev_file = "/etc/udev/rules.d/nfcdev.rules"
 
-            print("-- the device is owned by '{dev_usr}' but you are '{user}'"
-                  .format(dev_usr=dev_usr, user=usrname))
-            print("-- also members of the '{dev_grp}' group would be permitted"
-                  .format(dev_grp=dev_grp))
+            print(("-- the device is owned by '{dev_usr}' but you are '{user}'"
+                  .format(dev_usr=dev_usr, user=usrname)))
+            print(("-- also members of the '{dev_grp}' group would be permitted"
+                  .format(dev_grp=dev_grp)))
             print("-- you could use 'sudo' but this is not recommended")
 
             if plugdev is None:
                 print("-- it's better to adjust the device permissions")
                 action = 'MODE=\\"0666\\"'
                 udev_rule = udev_rule.format(vid=vid, pid=pid, action=action)
-                print("   sudo sh -c 'echo {udev_rule} >> {udev_file}'"
-                      .format(udev_rule=udev_rule, udev_file=udev_file))
+                print(("   sudo sh -c 'echo {udev_rule} >> {udev_file}'"
+                      .format(udev_rule=udev_rule, udev_file=udev_file)))
                 print("   sudo udevadm control -R # then re-attach device")
             elif dev_grp != "plugdev":
                 print("-- it's better to add the device to the 'plugdev' group")
                 action = 'GROUP=\\"plugdev\\"'
                 udev_rule = udev_rule.format(vid=vid, pid=pid, action=action)
-                print("   sudo sh -c 'echo {udev_rule} >> {udev_file}'"
-                      .format(udev_rule=udev_rule, udev_file=udev_file))
+                print(("   sudo sh -c 'echo {udev_rule} >> {udev_file}'"
+                      .format(udev_rule=udev_rule, udev_file=udev_file)))
                 print("   sudo udevadm control -R # then re-attach device")
                 if usrname not in plugdev.gr_mem:
                     print("-- and make yourself member of the 'plugdev' group")
-                    print("   sudo adduser {0} plugdev".format(usrname))
-                    print("   su - {0} # or logout once".format(usrname))
+                    print(("   sudo adduser {0} plugdev".format(usrname)))
+                    print(("   su - {0} # or logout once".format(usrname)))
             elif usrname not in plugdev.gr_mem:
                 print("-- you should add yourself to the 'plugdev' group")
-                print("   sudo adduser {0} plugdev".format(usrname))
-                print("   su - {0} # or logout once".format(usrname))
+                print(("   sudo adduser {0} plugdev".format(usrname)))
+                print(("   su - {0} # or logout once".format(usrname)))
             else:
                 print("-- but unfortunately I have no better idea than that")
 
 def usb_device_found_is_busy(bus, dev, vid, pid, path):
     info = "** found usb:{vid:04x}:{pid:04x} at {path} but it's already used"
-    print(info.format(vid=vid, pid=pid, path=path))
+    print((info.format(vid=vid, pid=pid, path=path)))
     if platform.system().lower() == "linux":
         sysfs = '/sys/bus/usb/devices/'
         for entry in os.listdir(sysfs):
@@ -154,19 +154,19 @@ def usb_device_found_is_busy(bus, dev, vid, pid, path):
 
         blf = "/etc/modprobe.d/blacklist-nfc.conf"
         sysfs_config_entry = sysfs_device_entry[:-1] + ":1.0/"
-        print("-- scan sysfs entry at '%s'" % sysfs_config_entry)
+        print(("-- scan sysfs entry at '%s'" % sysfs_config_entry))
         driver = os.readlink(sysfs_config_entry + "driver").split('/')[-1]
-        print("-- the device is used by the '%s' kernel driver" % driver)
+        print(("-- the device is used by the '%s' kernel driver" % driver))
         if os.access(sysfs_config_entry + "nfc", os.F_OK):
             print("-- this kernel driver belongs to the linux nfc subsystem")
             print("-- you can remove it to free the device for this session")
-            print("   sudo modprobe -r %s" % driver)
+            print(("   sudo modprobe -r %s" % driver))
             print("-- and blacklist the driver to prevent loading next time")
-            print("   sudo sh -c 'echo blacklist %s >> %s'" % (driver, blf))
+            print(("   sudo sh -c 'echo blacklist %s >> %s'" % (driver, blf)))
         elif driver == "usbfs":
             print("-- this indicates a user mode driver with libusb")
             devnode = "/dev/bus/usb/{0:03d}/{1:03d}".format(bus, dev)
-            print("-- find the process that uses " + devnode)
+            print(("-- find the process that uses " + devnode))
             try:
                 subprocess.check_output("which lsof".split())
             except subprocess.CalledProcessError:
@@ -179,11 +179,11 @@ def usb_device_found_is_busy(bus, dev, vid, pid, path):
                     ps = "ps --no-headers -o cmd -p %s" % pid
                     cmd = subprocess.check_output(ps.split()).strip()
                     cwd = os.readlink("/proc/%s/cwd" % pid)
-                    print("-- found that process %s uses the device" % pid)
-                    print("-- process %s is '%s'" % (pid, cmd))
-                    print("-- in directory '%s'" % cwd)
+                    print(("-- found that process %s uses the device" % pid))
+                    print(("-- process %s is '%s'" % (pid, cmd)))
+                    print(("-- in directory '%s'" % cwd))
                 else:
-                    print("   ps --no-headers -o cmd -p `sudo %s`" % lsof)
+                    print(("   ps --no-headers -o cmd -p `sudo %s`" % lsof))
 
 parser = argparse.ArgumentParser(
     prog="python -m nfc", description=description)

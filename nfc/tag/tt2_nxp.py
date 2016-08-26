@@ -66,8 +66,8 @@ class MifareUltralightC(tt2.Type2Tag):
     def dump(self):
         lines = super(MifareUltralightC, self)._dump(stop=40)
         
-        footer = dict(zip(range(40, 44), (
-            "LOCK2-LOCK3", "CTR0-CTR1", "AUTH0", "AUTH1")))
+        footer = dict(list(zip(list(range(40, 44)), (
+            "LOCK2-LOCK3", "CTR0-CTR1", "AUTH0", "AUTH1"))))
         
         for i in sorted(footer.keys()):
             try:
@@ -196,7 +196,7 @@ class MifareUltralightC(tt2.Type2Tag):
         return super(MifareUltralightC, self).authenticate(password)
         
     def _authenticate(self, password):
-        from pyDes import triple_des, CBC
+        from .pyDes import triple_des, CBC
 
         # The first 16 password character bytes are taken as key
         # unless the password is empty. If it's empty we use the
@@ -253,7 +253,7 @@ class NTAG203(tt2.Type2Tag):
     def dump(self):
         lines = super(NTAG203, self)._dump(40)
 
-        footer = dict(zip(range(40, 42), ("LOCK2-LOCK3", "CNTR0-CNTR1")))
+        footer = dict(list(zip(list(range(40, 42)), ("LOCK2-LOCK3", "CNTR0-CNTR1"))))
         
         for i in sorted(footer.keys()):
             try:
@@ -485,9 +485,9 @@ class NTAG210(NTAG21x):
         self._cfgpage = 16
         
     def dump(self):
-        footer = dict(zip(range(16, 20),
+        footer = dict(list(zip(list(range(16, 20)),
                           ("MIRROR_BYTE, RFU, MIRROR_PAGE, AUTH0",
-                           "ACCESS", "PWD0-PWD3", "PACK0-PACK1")))
+                           "ACCESS", "PWD0-PWD3", "PACK0-PACK1"))))
         return super(NTAG210, self)._dump(16, footer)
 
 class NTAG212(NTAG21x):
@@ -503,7 +503,7 @@ class NTAG212(NTAG21x):
     def dump(self):
         text = ("LOCK2-LOCK4", "MIRROR_BYTE, RFU, MIRROR_PAGE, AUTH0",
                 "ACCESS", "PWD0-PWD3", "PACK0-PACK1")
-        footer = dict(zip(range(36, 36+len(text)), text))
+        footer = dict(list(zip(list(range(36, 36+len(text))), text)))
         return super(NTAG212, self)._dump(36, footer)
 
 class NTAG213(NTAG21x):
@@ -520,7 +520,7 @@ class NTAG213(NTAG21x):
     def dump(self):
         text = ("LOCK2-LOCK4", "MIRROR, RFU, MIRROR_PAGE, AUTH0",
                 "ACCESS", "PWD0-PWD3", "PACK0-PACK1")
-        footer = dict(zip(range(40, 40+len(text)), text))
+        footer = dict(list(zip(list(range(40, 40+len(text))), text)))
         return super(NTAG213, self)._dump(40, footer)
 
 class NTAG215(NTAG21x):
@@ -537,7 +537,7 @@ class NTAG215(NTAG21x):
     def dump(self):
         text = ("LOCK2-LOCK4", "MIRROR, RFU, MIRROR_PAGE, AUTH0",
                 "ACCESS", "PWD0-PWD3", "PACK0-PACK1")
-        footer = dict(zip(range(130, 130+len(text)), text))
+        footer = dict(list(zip(list(range(130, 130+len(text))), text)))
         return super(NTAG215, self)._dump(130, footer)
 
 class NTAG216(NTAG21x):
@@ -554,7 +554,7 @@ class NTAG216(NTAG21x):
     def dump(self):
         text = ("LOCK2-LOCK4", "MIRROR, RFU, MIRROR_PAGE, AUTH0",
                 "ACCESS", "PWD0-PWD3", "PACK0-PACK1")
-        footer = dict(zip(range(226, 226+len(text)), text))
+        footer = dict(list(zip(list(range(226, 226+len(text))), text)))
         return super(NTAG216, self)._dump(226, footer)
 
 class MifareUltralightEV1(NTAG21x):
@@ -575,14 +575,14 @@ class MifareUltralightEV1(NTAG21x):
     def _dump_ul11(self):
         text = ("MOD, RFU, RFU, AUTH0", "ACCESS, VCTID, RFU, RFU",
                 "PWD0, PWD1, PWD2, PWD3", "PACK0, PACK1, RFU, RFU")
-        footer = dict(zip(range(16, 16+len(text)), text))
+        footer = dict(list(zip(list(range(16, 16+len(text))), text)))
         return super(MifareUltralightEV1, self)._dump(16, footer)
 
     def _dump_ul21(self):
         text = ("LOCK2, LOCK3, LOCK4, RFU",
                 "MOD, RFU, RFU, AUTH0", "ACCESS, VCTID, RFU, RFU",
                 "PWD0, PWD1, PWD2, PWD3", "PACK0, PACK1, RFU, RFU")
-        footer = dict(zip(range(36, 36+len(text)), text))
+        footer = dict(list(zip(list(range(36, 36+len(text))), text)))
         return super(MifareUltralightEV1, self)._dump(36, footer)
 
 class MF0UL11(MifareUltralightEV1):

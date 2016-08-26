@@ -128,7 +128,7 @@ def test_bt_config_record_encode_uuid_128():
     record.device_address = "A1:BF:80:80:07:01"
     record.service_class_uuid_list = ["11060000-1111-1000-8000-00805f9b34fb"]
     binary = "1A00 01078080BFA1 1107 0000061111110010800000805f9b34fb"
-    print record.data.encode("hex")
+    print(record.data.encode("hex"))
     assert record.data == str(bytearray.fromhex(binary))
     
 bluetooth_config_data = bytearray([

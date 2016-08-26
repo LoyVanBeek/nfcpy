@@ -31,7 +31,7 @@ import argparse
 from threading import Thread
 
 sys.path.insert(1, os.path.split(sys.path[0])[0])
-from cli import CommandLineInterface, TestFail
+from .cli import CommandLineInterface, TestFail
 
 import nfc
 import nfc.snep

@@ -32,7 +32,7 @@ from operator import lt, le, eq, ne, ge, gt, itemgetter
 
 def sequence(template):
     a, b, c = [int(s, 16) for s in itemgetter(0, 1, 3)(template.split())]
-    return str(bytearray(range(a, c+1, b-a))).encode("hex")
+    return str(bytearray(list(range(a, c+1, b-a)))).encode("hex")
 
 def packet_generator(packets):
     for packet in packets:
@@ -51,11 +51,11 @@ class ContactlessFrontend(nfc.clf.ContactlessFrontend):
         return {}
     
     def listen(self, target, timeout):
-        print target
+        print(target)
         if type(target) is nfc.clf.DEP:
             if target.br is None:
                 target.br = 106
-            return target, bytearray.fromhex(self.packets.next())
+            return target, bytearray.fromhex(next(self.packets))
     
     def sense(self, targets):
         for target in targets:
@@ -70,12 +70,12 @@ class ContactlessFrontend(nfc.clf.ContactlessFrontend):
                 return nfc.clf.TTF(212, idm, pmm, sys)
 
     def exchange(self, data, timeout):
-        send, wait, recv = self.packets.next()
+        send, wait, recv = next(self.packets)
         if send is not None:
-            print ">> " + str(data).encode("hex")
-            print "   " + send
+            print(">> " + str(data).encode("hex"))
+            print("   " + send)
             mask = bytearray.fromhex(makemask(send))
-            data = bytearray(map(lambda x: x[0] & x[1], zip(data, mask)))
+            data = bytearray([x[0] & x[1] for x in zip(data, mask)])
             assert data == bytearray.fromhex(send.replace('X', '0')), \
                 "send data does not match"
         if wait is not None:
@@ -92,7 +92,7 @@ class ContactlessFrontend(nfc.clf.ContactlessFrontend):
             if recv == "KeyboardInterrupt":
                 raise KeyboardInterrupt("simulated")
             recv = bytearray.fromhex(recv)
-            print "<< " + str(recv).encode("hex")
+            print("<< " + str(recv).encode("hex"))
             return recv
 
     def set_communication_mode(self, brm, **kwargs):
@@ -112,7 +112,7 @@ def test_p2p_pol_connect_and_terminate_locally():
            ("03D40A", None, "03D50B")]
     clf = ContactlessFrontend(seq)
     assert clf.connect(llcp={'role': 'initiator'}) == False
-    clf.packets.next()
+    next(clf.packets)
 
 @raises(StopIteration)
 def test_p2p_pol_connect_and_terminate_remotely():
@@ -127,7 +127,7 @@ def test_p2p_pol_connect_and_terminate_remotely():
            ("03D40A", None, "03D50B")]
     clf = ContactlessFrontend(seq)
     assert clf.connect(llcp={'role': 'initiator'}) == True
-    clf.packets.next()
+    next(clf.packets)
 
 @raises(StopIteration)
 def test_p2p_pol_connect_and_terminate_disrupted():
@@ -143,7 +143,7 @@ def test_p2p_pol_connect_and_terminate_disrupted():
            ("04D40680", None, "TimeoutError")]
     clf = ContactlessFrontend(seq)
     assert clf.connect(llcp={'role': 'initiator'}) == True
-    clf.packets.next()
+    next(clf.packets)
 
 @raises(StopIteration)
 def test_p2p_lis_connect_and_terminate_locally():
@@ -159,7 +159,7 @@ def test_p2p_lis_connect_and_terminate_locally():
            ("06D507000140", None, "03D40A"), ("03D50B", None, None)]
     clf = ContactlessFrontend(seq)
     assert clf.connect(llcp={'role': 'target'}) == False
-    clf.packets.next()
+    next(clf.packets)
 
 @raises(StopIteration)
 def test_p2p_lis_connect_and_terminate_remotely():
@@ -175,7 +175,7 @@ def test_p2p_lis_connect_and_terminate_remotely():
            ("06D507000000", None, "03D40A"), ("03D50B", None, None)]
     clf = ContactlessFrontend(seq)
     assert clf.connect(llcp={'role': 'target'}) == True
-    clf.packets.next()
+    next(clf.packets)
 
 @raises(StopIteration)
 def test_p2p_lis_connect_and_terminate_disrupted():
@@ -190,5 +190,5 @@ def test_p2p_lis_connect_and_terminate_disrupted():
            ("06D507000000", None, "TimeoutError")]
     clf = ContactlessFrontend(seq)
     assert clf.connect(llcp={'role': 'target'}) == True
-    clf.packets.next()
+    next(clf.packets)
 

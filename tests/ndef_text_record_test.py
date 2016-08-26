@@ -75,23 +75,23 @@ def test_init_arg_record():
     assert str(record) == b'\x11\x01\x0DT\x02deHallo Welt'
     
 def test_text_encode_utf8():
-    record = nfc.ndef.TextRecord(text=u'\xa1\xa2')
+    record = nfc.ndef.TextRecord(text='\xa1\xa2')
     assert str(record) == b'\x11\x01\x07T\x02en\xc2\xa1\xc2\xa2'
 
 def test_text_encode_utf16():
-    record = nfc.ndef.TextRecord(text=u'\xa1\xa2', encoding="UTF-16")
+    record = nfc.ndef.TextRecord(text='\xa1\xa2', encoding="UTF-16")
     assert str(record) == b'\x11\x01\x09T\x82en\xff\xfe\xa1\x00\xa2\x00'
 
 def test_text_decode_utf8():
     data=b'\x11\x01\x07T\x02fr\xc2\xa1\xc2\xa2'
     record = nfc.ndef.TextRecord(nfc.ndef.Record(data=data))
-    assert record.text == u'\xa1\xa2'
+    assert record.text == '\xa1\xa2'
     assert record.language == "fr"
 
 def test_text_decode_utf16():
     data=b'\x11\x01\x09T\x82fr\xff\xfe\xa1\x00\xa2\x00'
     record = nfc.ndef.TextRecord(nfc.ndef.Record(data=data))
-    assert record.text == u'\xa1\xa2'
+    assert record.text == '\xa1\xa2'
     assert record.language == "fr"
 
 def test_data_length_error():

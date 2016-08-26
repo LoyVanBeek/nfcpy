@@ -27,8 +27,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'nfcpy'
-copyright = u'2009-2015, Stephen Tiedemann'
+project = 'nfcpy'
+copyright = '2009-2015, Stephen Tiedemann'
 version = nfc.__version__
 release = version
 exclude_patterns = ['_build', '.#*', 'topics/.#*', 'examples/.#*']
@@ -68,8 +68,8 @@ htmlhelp_basename = 'nfcpydoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'nfcpy.tex', u'nfcpy documentation',
-   u'Stephen Tiedemann', 'manual'),
+  ('index', 'nfcpy.tex', 'nfcpy documentation',
+   'Stephen Tiedemann', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
