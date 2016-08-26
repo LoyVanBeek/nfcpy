@@ -39,3 +39,4 @@ from .handover import HandoverCarrierRecord
 from .bt_record import BluetoothConfigRecord
 from .wifi_record import WifiConfigRecord
 from .wifi_record import WifiPasswordRecord
+from .signature import SignatureRecord, SignatureType, HashType
