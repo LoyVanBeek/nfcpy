@@ -67,14 +67,15 @@ class TextRecord(Record):
         
     @property
     def data(self):
-        sb = chr(len(self.language) | ((self.encoding == "UTF-16") << 7))
-        return sb + self.language + self._text.encode(self.encoding)
+        sb = len(self.language) | ((self.encoding == "UTF-16") << 7)
+        encoded = self._text.encode(self.encoding)
+        return bytes([sb]) + self.language + encoded
 
     @data.setter
     def data(self, string):
-        log.debug("decode text record " + repr(string))
+        # log.debug("decode text record " + repr(string))
         if len(string) > 0:
-            status_byte = ord(string[0])
+            status_byte = string[0]
             if status_byte & 0x40:
                 log.warning("bit 6 of status byte is not zero")
             if status_byte & 0x3F == 0:
