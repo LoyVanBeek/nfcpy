@@ -21,9 +21,7 @@
 # permissions and limitations under the Licence.
 # -----------------------------------------------------------------------------
 import unittest
-import sys, os
-sys.path.insert(1, os.path.split(sys.path[0])[0])
-
+import random
 from ..message import Message
 from ..record import Record
 from ..text_record import TextRecord
@@ -104,4 +102,24 @@ class TestTextRecord(unittest.TestCase):
         record = TextRecord(Record(data=data))
         self.assertEqual(record.language, b"deHallo Welt")
         self.assertEqual(record.text, "")
+
+    def test_text_in_message(self):
+        message = Message(b'\xd1\x01\x0eT\x02enHello world')
+                    #     b'\xd1\x01\x0eT\x02enHello world'
+
+        record = TextRecord(message[0])
+
+        self.assertEqual(record.text, 'Hello world')
+        self.assertEqual(record.language, b'en')
+        self.assertEqual(record.encoding, 'UTF-8')
+
+    def test_text_in_message_plus_random(self):
+        random_pad = bytes([random.randint(a=0, b=255) for _ in range(1000)])
+        message = Message(b'\xd1\x01\x0eT\x02enHello world' + random_pad)
+
+        record = TextRecord(message[0])
+
+        self.assertEqual(record.text, 'Hello world')
+        self.assertEqual(record.language, b'en')
+        self.assertEqual(record.encoding, 'UTF-8')
 
