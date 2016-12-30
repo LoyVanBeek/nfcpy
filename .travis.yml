@@ -9,7 +9,7 @@ install:
   - pip install stdeb
 # command to run tests
 script: 
+  - python3 setup.py --command-packages=stdeb.command bdist_deb
   - nosetests --with-coverage
 after_success:
   - bash <(curl -s https://codecov.io/bash)
-  - python3 setup.py --command-packages=stdeb.command bdist_deb
