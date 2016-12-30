@@ -7,8 +7,10 @@ install:
   - python3 setup.py install
   - pip install codecov
   - pip install stdeb
+  - sudo apt-get install -y debhelper python3-all python3-setuptools
 # command to run tests
-script: 
+script:
+  - python3 setup.py install
   - python3 setup.py --command-packages=stdeb.command bdist_deb
   - nosetests --with-coverage
 after_success:
